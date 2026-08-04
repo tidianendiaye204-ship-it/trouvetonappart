@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 // - Ou un fournisseur de géocodage professionnel (LocationIQ, Mapbox Geocoding, Photon, Google Maps, etc.)
 // pour éviter d'être bloqué et de surcharger le serveur public gratuit.
 
-import { NextResponse } from 'next/server'
+// (import removed)
 
 // Simple in-memory rate limiter for the MVP
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>()
