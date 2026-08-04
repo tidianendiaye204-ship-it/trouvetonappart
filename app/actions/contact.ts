@@ -25,31 +25,27 @@ export async function submitContact(formData: FormData) {
     return { success: false, error: "Veuillez remplir tous les champs obligatoires." }
   }
 
-  // 3. Vérification Turnstile
-  if (!token) {
-    return { success: false, error: "Veuillez valider le Captcha." }
-  }
-
-  if (!TURNSTILE_SECRET_KEY) {
-    console.error("Clé secrète Turnstile manquante")
-    // En développement, si la clé manque on passe, mais en prod ça devrait échouer
-    if (process.env.NODE_ENV === 'production') {
-      return { success: false, error: "Erreur de configuration serveur." }
+  // 3. Vérification Turnstile (optional)
+  // Si la clé secrète est définie, on attend un token valide.
+  if (TURNSTILE_SECRET_KEY) {
+    if (!token) {
+      return { success: false, error: "Veuillez valider le Captcha." };
     }
-  } else {
     // Appel à l'API Cloudflare
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       body: `secret=${encodeURIComponent(TURNSTILE_SECRET_KEY)}&response=${encodeURIComponent(token as string)}`,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    })
-
-    const data = await res.json()
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    const data = await res.json();
     if (!data.success) {
-      console.error("Echec Turnstile:", data)
-      return { success: false, error: "Validation Captcha échouée." }
+      console.error('Echec Turnstile:', data);
+      return { success: false, error: 'Validation Captcha échouée.' };
+    }
+  } else {
+    // Pas de clé -> on désactive la vérification (utile en dev ou si le captcha est désactivé)
+    if (token) {
+      console.warn('Token Turnstile reçu mais aucune clé secrète configurée – validation ignorée.');
     }
   }
 

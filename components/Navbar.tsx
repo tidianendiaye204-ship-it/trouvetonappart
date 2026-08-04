@@ -34,7 +34,8 @@ export default async function Navbar() {
           <div className="h-6 w-px bg-ardoise-gris/20 hidden md:block"></div>
 
           <Link href="/recherche" className="bg-indigo-principal text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-lg shadow-indigo-principal/30 hover:shadow-indigo-principal/50 hover:-translate-y-0.5 transition-all active:scale-95">
-            Trouver un bien
+            <span className="hidden sm:inline">Trouver un bien</span>
+            <span className="sm:hidden">Recherche</span>
           </Link>
           
           <BoutonInstallation />
