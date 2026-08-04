@@ -19,9 +19,9 @@ export default async function RecherchePage({
     const biensAffiches = await searchBiensPubliques({ type, transaction, ville })
 
     return (
-        <div className="flex h-screen pt-20 bg-sable-fond">
+        <div className="flex flex-col-reverse lg:flex-row h-screen pt-20 bg-sable-fond">
             {/* Colonne liste + filtres */}
-            <div className="w-full lg:w-1/2 overflow-y-auto p-4 border-r border-ardoise-gris/20">
+            <div className="w-full lg:w-1/2 overflow-y-auto p-4 border-t lg:border-t-0 lg:border-r border-ardoise-gris/20 h-[50vh] lg:h-full">
                 <form className="mb-8 flex flex-col sm:flex-row bg-white rounded-2xl sm:rounded-full shadow-md border border-ardoise-gris/10 p-1.5" method="get">
                     <select name="type" defaultValue={type ?? ''} className="flex-1 bg-transparent px-4 py-3 sm:py-2 font-medium outline-none text-quasi-noir border-b sm:border-b-0 sm:border-r border-ardoise-gris/20 hover:bg-sable-fond/50 transition-colors sm:rounded-l-full cursor-pointer">
                         <option value="">Tous types</option>
@@ -60,8 +60,8 @@ export default async function RecherchePage({
                 </div>
             </div>
 
-            {/* Colonne carte (masquée sur mobile) */}
-            <div className="hidden lg:block lg:w-1/2 p-0">
+            {/* Colonne carte */}
+            <div className="w-full lg:w-1/2 h-[50vh] lg:h-full p-0">
                 <CarteBiens biens={biensAffiches} />
             </div>
         </div>

@@ -6,56 +6,59 @@ import Image from 'next/image'
 import imageCompression from 'browser-image-compression'
 import { createClient } from '@/lib/supabase/client'
 import ChampAdresse from './ChampAdresse'
-
-type TypeBien = 'terrain' | 'maison' | 'appartement'
-type Transaction = 'location' | 'vente'
-type Statut = 'disponible' | 'reserve' | 'loue' | 'vendu'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { bienSchema, BienFormData } from '@/lib/validations/bien.schema'
 
 export default function FormulaireBien({ bien }: { bien?: any }) {
     const router = useRouter()
     const supabase = createClient()
     const isEditMode = !!bien
 
-    const [titre, setTitre] = useState(bien?.titre || '')
-    const [type, setType] = useState<TypeBien>(bien?.type || 'maison')
-    const [transaction, setTransaction] = useState<Transaction>(bien?.transaction || 'location')
-    const [statut, setStatut] = useState<Statut>(bien?.statut || 'disponible')
-    const [publie, setPublie] = useState(bien?.publie ?? true)
-    const [description, setDescription] = useState(bien?.description || '')
-    const [prix, setPrix] = useState(bien?.prix?.toString() || '')
-    const [superficie, setSuperficie] = useState(bien?.superficie?.toString() || '')
-    const [nbChambres, setNbChambres] = useState(bien?.nb_chambres?.toString() || '')
-    const [adresse, setAdresse] = useState<{
-        adresse: string
-        ville: string | null
-        quartier: string | null
-        latitude: number
-        longitude: number
-    } | null>(bien ? {
-        adresse: bien.adresse,
-        ville: bien.ville,
-        quartier: bien.quartier,
-        latitude: bien.latitude,
-        longitude: bien.longitude
-    } : null)
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors, isSubmitting }
+    } = useForm<BienFormData>({
+        resolver: zodResolver(bienSchema) as any,
+        defaultValues: {
+            titre: bien?.titre || '',
+            type: bien?.type || 'maison',
+            transaction: bien?.transaction || 'location',
+            prix: bien?.prix || undefined,
+            superficie: bien?.superficie || undefined,
+            nb_chambres: bien?.nb_chambres || undefined,
+            statut: bien?.statut || 'disponible',
+            publie: bien?.publie ?? true,
+            description: bien?.description || '',
+            adresse: bien?.adresse || undefined,
+            ville: bien?.ville || undefined,
+            quartier: bien?.quartier || undefined,
+            latitude: bien?.latitude || undefined,
+            longitude: bien?.longitude || undefined,
+        }
+    })
+
+    const type = watch('type')
+    const adresseValue = watch('adresse')
+    const publieValue = watch('publie')
     
     // Pour l'édition, on garde les anciennes images affichées et on permet d'en rajouter des nouvelles.
     const [anciennesImages, setAnciennesImages] = useState<any[]>(bien?.biens_images || [])
     const [images, setImages] = useState<File[]>([])
     
-    const [enCours, setEnCours] = useState(false)
     const [erreur, setErreur] = useState<string | null>(null)
+    const [isDeletingImg, setIsDeletingImg] = useState(false)
 
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault()
+    async function onSubmit(data: any) {
         setErreur(null)
 
-        if (!adresse) {
+        if (!data.adresse) {
             setErreur("Veuillez sélectionner une adresse dans la liste proposée.")
             return
         }
-
-        setEnCours(true)
 
         try {
             const { data: { user } } = await supabase.auth.getUser()
@@ -69,22 +72,7 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
             if (isEditMode) {
                 const { error: erreurBien } = await supabase
                     .from('biens')
-                    .update({
-                        titre,
-                        type,
-                        transaction,
-                        statut,
-                        publie,
-                        description,
-                        adresse: adresse.adresse,
-                        ville: adresse.ville,
-                        quartier: adresse.quartier,
-                        latitude: adresse.latitude,
-                        longitude: adresse.longitude,
-                        prix: Number(prix),
-                        superficie: superficie ? Number(superficie) : null,
-                        nb_chambres: nbChambres ? Number(nbChambres) : null,
-                    })
+                    .update(data)
                     .eq('id', bienId)
 
                 if (erreurBien) throw erreurBien
@@ -92,21 +80,8 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
                 const { data: newBien, error: erreurBien } = await supabase
                     .from('biens')
                     .insert({
+                        ...data,
                         proprietaire_id: user.id,
-                        titre,
-                        type,
-                        transaction,
-                        statut,
-                        publie,
-                        description,
-                        adresse: adresse.adresse,
-                        ville: adresse.ville,
-                        quartier: adresse.quartier,
-                        latitude: adresse.latitude,
-                        longitude: adresse.longitude,
-                        prix: Number(prix),
-                        superficie: superficie ? Number(superficie) : null,
-                        nb_chambres: nbChambres ? Number(nbChambres) : null,
                     })
                     .select()
                     .single()
@@ -164,35 +139,32 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
             router.refresh()
         } catch (err) {
             setErreur(err instanceof Error ? err.message : 'Une erreur est survenue.')
-        } finally {
-            setEnCours(false)
         }
     }
 
     async function handleDeleteAncienneImage(imageId: string, e: React.MouseEvent) {
         e.preventDefault()
         if (confirm("Voulez-vous vraiment supprimer cette image ?")) {
-            setEnCours(true)
+            setIsDeletingImg(true)
             try {
                 await supabase.from('biens_images').delete().eq('id', imageId)
                 setAnciennesImages(prev => prev.filter(img => img.id !== imageId))
             } catch (err) {
                 console.error(err)
             } finally {
-                setEnCours(false)
+                setIsDeletingImg(false)
             }
         }
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-xl">
             {isEditMode && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-sable-fond/50 p-4 rounded-xl border border-ardoise-gris/10">
                     <div>
                         <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Statut</label>
                         <select
-                            value={statut}
-                            onChange={(e) => setStatut(e.target.value as Statut)}
+                            {...register('statut')}
                             className="w-full px-4 py-2 border border-ardoise-gris/30 bg-white rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir"
                         >
                             <option value="disponible">Disponible</option>
@@ -200,13 +172,13 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
                             <option value="loue">Loué</option>
                             <option value="vendu">Vendu</option>
                         </select>
+                        {errors.statut && <p className="text-red-500 text-xs mt-1">{errors.statut.message}</p>}
                     </div>
                     <div className="flex items-center pt-6">
                         <label className="flex items-center gap-3 cursor-pointer">
                             <input
                                 type="checkbox"
-                                checked={publie}
-                                onChange={(e) => setPublie(e.target.checked)}
+                                {...register('publie')}
                                 className="w-5 h-5 text-indigo-principal rounded border-ardoise-gris/30 focus:ring-indigo-principal"
                             />
                             <span className="text-sm font-medium text-quasi-noir">Annonce publiée (visible)</span>
@@ -218,75 +190,82 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
             <div>
                 <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Titre de l'annonce</label>
                 <input
-                    required
-                    value={titre}
-                    onChange={(e) => setTitre(e.target.value)}
+                    {...register('titre')}
                     className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all placeholder:text-ardoise-gris/50"
                     placeholder="Ex: Belle villa 4 pièces à Sacré-Cœur"
                 />
+                {errors.titre && <p className="text-red-500 text-xs mt-1">{errors.titre.message}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Type</label>
                     <select
-                        value={type}
-                        onChange={(e) => setType(e.target.value as TypeBien)}
+                        {...register('type')}
                         className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all"
                     >
                         <option value="maison">Maison</option>
                         <option value="appartement">Appartement</option>
                         <option value="terrain">Terrain</option>
                     </select>
+                    {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type.message}</p>}
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Transaction</label>
                     <select
-                        value={transaction}
-                        onChange={(e) => setTransaction(e.target.value as Transaction)}
+                        {...register('transaction')}
                         className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all"
                     >
                         <option value="location">Location</option>
                         <option value="vente">Vente</option>
                     </select>
+                    {errors.transaction && <p className="text-red-500 text-xs mt-1">{errors.transaction.message}</p>}
                 </div>
             </div>
 
             <div>
                 <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Adresse {isEditMode && '(tapez pour modifier)'}</label>
                 {isEditMode && <div className="mb-2 text-sm text-ardoise-gris">Adresse actuelle : {bien.adresse}</div>}
-                <ChampAdresse onSelect={setAdresse} />
+                <ChampAdresse 
+                    onSelect={(val) => {
+                        setValue('adresse', val?.adresse || undefined)
+                        setValue('ville', val?.ville || undefined)
+                        setValue('quartier', val?.quartier || undefined)
+                        setValue('latitude', val?.latitude || undefined)
+                        setValue('longitude', val?.longitude || undefined)
+                    }} 
+                />
+                {!adresseValue && !isEditMode && <p className="text-ardoise-gris/60 text-xs mt-1">Recherchez et sélectionnez une adresse.</p>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
                     <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Prix (FCFA)</label>
                     <input
-                        required
                         type="number"
-                        value={prix}
-                        onChange={(e) => setPrix(e.target.value)}
+                        {...register('prix')}
                         className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all"
                     />
+                    {errors.prix && <p className="text-red-500 text-xs mt-1">{errors.prix.message}</p>}
                 </div>
                 <div>
                     <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Superficie (m²)</label>
                     <input
                         type="number"
-                        value={superficie}
-                        onChange={(e) => setSuperficie(e.target.value)}
+                        {...register('superficie')}
                         className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all"
                     />
+                    {errors.superficie && <p className="text-red-500 text-xs mt-1">{errors.superficie.message}</p>}
                 </div>
                 {type !== 'terrain' && (
                     <div>
                         <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Chambres</label>
                         <input
                             type="number"
-                            value={nbChambres}
-                            onChange={(e) => setNbChambres(e.target.value)}
+                            {...register('nb_chambres')}
                             className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all"
                         />
+                        {errors.nb_chambres && <p className="text-red-500 text-xs mt-1">{errors.nb_chambres.message}</p>}
                     </div>
                 )}
             </div>
@@ -294,11 +273,11 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
             <div>
                 <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Description</label>
                 <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    {...register('description')}
                     rows={4}
                     className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all"
                 />
+                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
             </div>
 
             <div className="pt-2">
@@ -351,10 +330,10 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
             <div className="pt-4 flex justify-end">
                 <button
                     type="submit"
-                    disabled={enCours}
+                    disabled={isSubmitting || isDeletingImg}
                     className="rounded-full bg-indigo-principal text-white px-8 py-3 font-bold hover:brightness-110 transition-all active:scale-95 shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                    {enCours ? (isEditMode ? 'Enregistrement...' : 'Publication en cours...') : (isEditMode ? 'Enregistrer les modifications' : "Publier l'annonce")}
+                    {isSubmitting ? (isEditMode ? 'Enregistrement...' : 'Publication en cours...') : (isEditMode ? 'Enregistrer les modifications' : "Publier l'annonce")}
                 </button>
             </div>
         </form>

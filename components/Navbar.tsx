@@ -33,19 +33,19 @@ export default async function Navbar() {
           
           <div className="h-6 w-px bg-ardoise-gris/20 hidden md:block"></div>
 
-          <Link href="/recherche" className="hidden sm:block text-sm font-bold text-quasi-noir hover:text-indigo-principal transition-colors">
-            Rechercher
+          <Link href="/recherche" className="bg-indigo-principal text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-lg shadow-indigo-principal/30 hover:shadow-indigo-principal/50 hover:-translate-y-0.5 transition-all active:scale-95">
+            Trouver un bien
           </Link>
           
           <BoutonInstallation />
 
           {user ? (
-            <Link href="/mes-annonces" className="bg-indigo-principal text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-indigo-principal/30 hover:shadow-indigo-principal/50 hover:-translate-y-0.5 transition-all active:scale-95">
-              Mon Espace Pro
+            <Link href="/mes-annonces" className="bg-white border-2 border-indigo-principal text-indigo-principal px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-sm hover:-translate-y-0.5 transition-all active:scale-95">
+              Espace Pro
             </Link>
           ) : (
-            <Link href="/login" className="bg-quasi-noir text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95">
-              Espace Propriétaire
+            <Link href="/login" className="bg-white border-2 border-ardoise-gris/20 text-quasi-noir px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-sm hover:-translate-y-0.5 transition-all active:scale-95">
+              Espace Pro
             </Link>
           )}
         </div>

@@ -11,6 +11,7 @@ export default function FormulaireContact({ bienId }: { bienId: string }) {
   
   // Rate limiting client state
   const [cooldown, setCooldown] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
 
   async function clientAction(formData: FormData) {
     // Anti-spam: Client-side rate limit check
@@ -32,6 +33,9 @@ export default function FormulaireContact({ bienId }: { bienId: string }) {
     setErreur(null)
 
     formData.append('bienId', bienId)
+    if (captchaToken) {
+      formData.append('cf-turnstile-response', captchaToken)
+    }
     
     // Appel à la Server Action
     const result = await submitContact(formData)
@@ -108,7 +112,9 @@ export default function FormulaireContact({ bienId }: { bienId: string }) {
 
       <div className="flex justify-center my-4">
         <Turnstile
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} // Clé factice de test par défaut si non défini
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+          onSuccess={(token) => setCaptchaToken(token)}
+          options={{ theme: 'light' }}
         />
       </div>
 
