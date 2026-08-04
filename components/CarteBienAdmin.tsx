@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Edit, ExternalLink, Home } from 'lucide-react'
 import { activerSponsoring } from '@/app/actions/sponsorisation'
+import BoutonSupprimerBien from './BoutonSupprimerBien'
 
 import { Bien } from '@/types'
 
@@ -30,10 +31,25 @@ export default function CarteBienAdmin({ bien }: { bien: Bien }) {
                 <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
                 
                 {/* Status Badge */}
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
                     <span className={`px-3 py-1.5 text-xs font-bold rounded-full shadow-sm backdrop-blur-md ${bien.publie ? 'bg-emeraude/90 text-white' : 'bg-safran-accent/90 text-quasi-noir'}`}>
                         {bien.publie ? 'En Ligne' : 'Brouillon'}
                     </span>
+                    {bien.statut === 'vendu' && (
+                        <span className="px-3 py-1.5 text-xs font-bold rounded-full shadow-sm backdrop-blur-md bg-indigo-principal/90 text-white">
+                            Vendu
+                        </span>
+                    )}
+                    {bien.statut === 'loue' && (
+                        <span className="px-3 py-1.5 text-xs font-bold rounded-full shadow-sm backdrop-blur-md bg-indigo-principal/90 text-white">
+                            Loué
+                        </span>
+                    )}
+                    {bien.statut === 'reserve' && (
+                        <span className="px-3 py-1.5 text-xs font-bold rounded-full shadow-sm backdrop-blur-md bg-safran-accent/90 text-quasi-noir">
+                            Réservé
+                        </span>
+                    )}
                 </div>
 
                 {/* Price (bottom left over image) */}
@@ -74,6 +90,8 @@ export default function CarteBienAdmin({ bien }: { bien: Bien }) {
                     >
                         <ExternalLink className="w-5 h-5" />
                     </Link>
+
+                    <BoutonSupprimerBien id={bien.id} />
                 </div>
                 {/* Sponsoring Section */}
                 <div className="mt-4 pt-4 border-t border-ardoise-gris/10">
