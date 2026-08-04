@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Building2 } from 'lucide-react'
+import BoutonInstallation from './BoutonInstallation'
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -36,6 +37,8 @@ export default async function Navbar() {
             Rechercher
           </Link>
           
+          <BoutonInstallation />
+
           {user ? (
             <Link href="/mes-annonces" className="bg-indigo-principal text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-indigo-principal/30 hover:shadow-indigo-principal/50 hover:-translate-y-0.5 transition-all active:scale-95">
               Mon Espace Pro

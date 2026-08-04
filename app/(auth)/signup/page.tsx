@@ -25,7 +25,16 @@ export default function SignupPage() {
     })
 
     if (error) {
-      setErreur(error.message)
+      let errorMessage = error.message
+      if (errorMessage.includes('User already registered')) {
+        errorMessage = 'Un compte existe déjà avec cette adresse email.'
+      } else if (errorMessage.includes('Password should be at least')) {
+        errorMessage = 'Le mot de passe doit contenir au moins 6 caractères.'
+      } else {
+        errorMessage = 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.'
+      }
+      
+      setErreur(errorMessage)
       setEnCours(false)
       return
     }

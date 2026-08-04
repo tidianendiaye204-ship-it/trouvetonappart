@@ -24,7 +24,16 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setErreur(error.message)
+      let errorMessage = error.message
+      if (errorMessage === 'Invalid login credentials') {
+        errorMessage = 'Adresse email ou mot de passe incorrect.'
+      } else if (errorMessage === 'Email not confirmed') {
+        errorMessage = 'Veuillez confirmer votre adresse email avant de vous connecter.'
+      } else {
+        errorMessage = 'Une erreur est survenue lors de la connexion. Veuillez réessayer.'
+      }
+      
+      setErreur(errorMessage)
       setEnCours(false)
       return
     }
