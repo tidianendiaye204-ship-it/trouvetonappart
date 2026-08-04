@@ -44,7 +44,9 @@ export async function searchBiensPubliques(filtres?: {
 
   if (filtres?.type) query = query.eq('type', filtres.type)
   if (filtres?.transaction) query = query.eq('transaction', filtres.transaction)
-  if (filtres?.ville) query = query.ilike('ville', `%${filtres.ville}%`)
+  if (filtres?.ville) {
+    query = query.or(`ville.ilike.%${filtres.ville}%,quartier.ilike.%${filtres.ville}%,adresse.ilike.%${filtres.ville}%`)
+  }
 
   const { data: biens, error } = await query
 
