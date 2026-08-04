@@ -25,7 +25,7 @@ export async function submitContact(formData: FormData) {
     return { success: false, error: "Veuillez remplir tous les champs obligatoires." }
   }
 
-  // 3. Vérification Turnstile (optional)
+  // 3. Vérification Turnstile (optional) – token non obligatoire
   // Si la clé secrète est définie, on attend un token valide.
   if (TURNSTILE_SECRET_KEY) {
     if (!token) {
@@ -43,7 +43,7 @@ export async function submitContact(formData: FormData) {
       return { success: false, error: 'Validation Captcha échouée.' };
     }
   } else {
-    // Pas de clé -> on désactive la vérification (utile en dev ou si le captcha est désactivé)
+    // Pas de clé -> aucune validation du token
     if (token) {
       console.warn('Token Turnstile reçu mais aucune clé secrète configurée – validation ignorée.');
     }

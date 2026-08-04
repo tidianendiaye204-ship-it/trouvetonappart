@@ -111,11 +111,20 @@ export default function FormulaireContact({ bienId }: { bienId: string }) {
       </div>
 
       <div className="flex justify-center my-4">
-        <Turnstile
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
-          onSuccess={(token) => setCaptchaToken(token)}
-          options={{ theme: 'light' }}
-        />
+        {/* Turnstile */}
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+          <Turnstile
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            onSuccess={(token) => setCaptchaToken(token)}
+            options={{ theme: 'light' }}
+            onError={(e) => console.error('Turnstile error', e)}
+          />
+        ) : (
+          <p className="text-sm text-ardoise-gris">
+            Captcha non disponible (clé manquante).
+          </p>
+        )}
+
       </div>
 
       {erreur && <p className="text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg">{erreur}</p>}

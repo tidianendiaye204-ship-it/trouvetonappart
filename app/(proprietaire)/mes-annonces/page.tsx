@@ -108,11 +108,14 @@ export default async function DashboardPage() {
           <Link href="/mes-annonces/nouveau" className="flex items-center gap-2 rounded-full bg-quasi-noir text-white px-5 py-2.5 text-sm font-bold shadow-md hover:scale-105 transition-transform">
             <PlusCircle className="w-4 h-4" /> Ajouter un bien
           </Link>
-          <Link href="/locataires/nouveau" className="flex items-center gap-2 rounded-full bg-safran-accent text-quasi-noir px-5 py-2.5 text-sm font-bold shadow-sm hover:scale-105 transition-transform">
-            <UserPlus className="w-4 h-4" /> Ajouter un locataire
+          <Link href="/locataires" className="flex items-center gap-2 rounded-full bg-safran-accent text-quasi-noir px-5 py-2.5 text-sm font-bold shadow-sm hover:scale-105 transition-transform">
+            <Users className="w-4 h-4" /> Mes Locataires
           </Link>
-          <Link href="/baux/nouveau" className="flex items-center gap-2 rounded-full bg-white border border-ardoise-gris/20 text-quasi-noir px-5 py-2.5 text-sm font-bold hover:bg-sable-fond transition-colors shadow-sm">
-            <FileText className="w-4 h-4" /> Nouveau contrat
+          <Link href="/baux" className="flex items-center gap-2 rounded-full bg-white border border-ardoise-gris/20 text-quasi-noir px-5 py-2.5 text-sm font-bold hover:bg-sable-fond transition-colors shadow-sm">
+            <FileText className="w-4 h-4" /> Mes Contrats
+          </Link>
+          <Link href="/profil" className="flex items-center gap-2 rounded-full bg-white border border-ardoise-gris/20 text-quasi-noir px-5 py-2.5 text-sm font-bold hover:bg-sable-fond transition-colors shadow-sm">
+            <Users className="w-4 h-4" /> Mon Profil
           </Link>
         </div>
       </div>

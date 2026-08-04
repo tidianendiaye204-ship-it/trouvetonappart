@@ -89,6 +89,20 @@ export default function CarteBiens({ biens }: { biens: Bien[] }) {
                                 <div className="text-indigo-principal font-black text-lg">
                                     {bien.prix.toLocaleString('fr-FR')} <span className="text-xs font-bold">FCFA</span>
                                 </div>
+                                {(bien.telephone || bien.whatsapp) && (
+                                  <div className="flex gap-2 mt-1">
+                                    {bien.telephone && (
+                                      <a href={`tel:${bien.telephone}`} className="flex-1 flex items-center justify-center gap-1 bg-indigo-principal/10 hover:bg-indigo-principal text-indigo-principal hover:text-white rounded-full py-1.5 text-xs font-bold transition-all" onClick={(e) => e.stopPropagation()}>
+                                        📞 Appeler
+                                      </a>
+                                    )}
+                                    {bien.whatsapp && (
+                                      <a href={`https://wa.me/${bien.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 bg-[#25D366]/10 hover:bg-[#25D366] text-[#25D366] hover:text-white rounded-full py-1.5 text-xs font-bold transition-all" onClick={(e) => e.stopPropagation()}>
+                                        💬 WhatsApp
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
                                 <Link href={`/annonce/${bien.id}`} className="mt-2 w-full bg-indigo-principal text-white rounded-full py-2 text-sm font-bold hover:brightness-110 transition-all active:scale-[0.98] text-center block">
                                     Voir les détails
                                 </Link>

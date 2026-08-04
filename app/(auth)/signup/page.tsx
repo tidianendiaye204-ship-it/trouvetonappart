@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 export default function SignupPage() {
   const router = useRouter()
   const supabase = createClient()
+  const [nom, setNom] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [erreur, setErreur] = useState<string | null>(null)
@@ -19,9 +20,20 @@ export default function SignupPage() {
     setEnCours(true)
     setErreur(null)
 
+    if (!nom.trim()) {
+      setErreur('Veuillez entrer votre nom complet.')
+      setEnCours(false)
+      return
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          nom: nom.trim(),
+        },
+      },
     })
 
     if (error) {
@@ -78,6 +90,17 @@ export default function SignupPage() {
         </p>
         
         <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+          <div>
+            <label className="block text-sm font-semibold text-quasi-noir mb-2">Nom complet</label>
+            <input
+              type="text"
+              required
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              className="w-full px-4 py-3 bg-sable-fond border border-ardoise-gris/30 rounded-xl focus:ring-2 focus:ring-indigo-principal focus:border-indigo-principal outline-none transition-all text-quasi-noir"
+              placeholder="Ex: Mamadou Diallo"
+            />
+          </div>
           <div>
             <label className="block text-sm font-semibold text-quasi-noir mb-2">Adresse email</label>
             <input

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
 import FormPaiement from './FormPaiement'
+import BoutonSupprimerBail from '@/components/BoutonSupprimerBail'
 
 export default async function BailDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -51,12 +52,15 @@ export default async function BailDetailsPage({ params }: { params: Promise<{ id
             <h1 className="font-display text-2xl font-black text-quasi-noir mb-2">Contrat de location</h1>
             <p className="text-ardoise-gris font-medium">{bail.biens?.titre}</p>
           </div>
-          <span className={`px-4 py-2 text-sm font-bold rounded-full ${
-            bail.statut === 'actif' ? 'bg-emeraude/10 text-emeraude' : 
-            bail.statut === 'termine' ? 'bg-ardoise-gris/10 text-ardoise-gris' : 'bg-red-100 text-red-600'
-          }`}>
-            {bail.statut.toUpperCase()}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className={`px-4 py-2 text-sm font-bold rounded-full ${
+              bail.statut === 'actif' ? 'bg-emeraude/10 text-emeraude' : 
+              bail.statut === 'termine' ? 'bg-ardoise-gris/10 text-ardoise-gris' : 'bg-red-100 text-red-600'
+            }`}>
+              {bail.statut.toUpperCase()}
+            </span>
+            <BoutonSupprimerBail id={bail.id} />
+          </div>
         </div>
 
         <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">

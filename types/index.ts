@@ -30,6 +30,8 @@ export type Bien = {
   sponsorise_jusqu_a?: string | null
   image_principale?: string | null
   biens_images?: BienImage[]
+  telephone?: string
+  whatsapp?: string
 }
 
 export type Locataire = {

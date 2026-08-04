@@ -38,6 +38,8 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
             quartier: bien?.quartier || undefined,
             latitude: bien?.latitude || undefined,
             longitude: bien?.longitude || undefined,
+            telephone: bien?.telephone || '',
+            whatsapp: bien?.whatsapp || '',
         }
     })
 
@@ -278,6 +280,28 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
                     className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all"
                 />
                 {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div>
+                    <label className="block text-sm font-medium mb-1.5 text-quasi-noir">Téléphone du propriétaire</label>
+                    <input
+                        type="tel"
+                        {...register('telephone')}
+                        placeholder="+221771234567"
+                        className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all placeholder:text-ardoise-gris/50"
+                    />
+                    {errors.telephone && <p className="text-red-500 text-xs mt-1">{errors.telephone.message}</p>}
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1.5 text-quasi-noir">WhatsApp du propriétaire</label>
+                    <input
+                        type="tel"
+                        {...register('whatsapp')}
+                        placeholder="+221771234567"
+                        className="w-full px-4 py-2.5 border border-ardoise-gris/30 bg-sable-fond rounded-xl focus:ring-2 focus:ring-indigo-principal outline-none text-quasi-noir transition-all placeholder:text-ardoise-gris/50"
+                    />
+                    {errors.whatsapp && <p className="text-red-500 text-xs mt-1">{errors.whatsapp.message}</p>}
+                </div>
             </div>
 
             <div className="pt-2">

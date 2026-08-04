@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Users, PlusCircle, ArrowLeft, Mail, Phone } from 'lucide-react'
+import BoutonSupprimerLocataire from '@/components/BoutonSupprimerLocataire'
 
 export default async function LocatairesPage() {
   const supabase = await createClient()
@@ -93,9 +94,12 @@ export default async function LocatairesPage() {
                     {locataire.cni || <span className="text-ardoise-gris/50 italic">Non renseigné</span>}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-indigo-principal hover:underline font-bold text-sm">
-                      Détails
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button className="text-indigo-principal hover:underline font-bold text-sm">
+                        Détails
+                      </button>
+                      <BoutonSupprimerLocataire id={locataire.id} />
+                    </div>
                   </td>
                 </tr>
               ))}

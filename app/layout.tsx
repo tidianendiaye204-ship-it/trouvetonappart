@@ -33,6 +33,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={`${ibmPlexSans.variable}`}>
+      <head>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+      </head>
       <body className="flex flex-col min-h-screen font-body bg-sable-fond text-quasi-noir">
         <Navbar />
         <main className="flex-1">

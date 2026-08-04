@@ -2,18 +2,22 @@
 
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
-import { supprimerBien } from '@/app/actions/supprimerBien'
+import { supprimerBail } from '@/app/actions/supprimerBail'
+import { useRouter } from 'next/navigation'
 
-export default function BoutonSupprimerBien({ id }: { id: string }) {
+export default function BoutonSupprimerBail({ id }: { id: string }) {
     const [enCours, setEnCours] = useState(false)
+    const router = useRouter()
 
     async function handleSupprimer() {
-        if (confirm("Voulez-vous vraiment supprimer cette annonce ? Cette action est irréversible.")) {
+        if (confirm("Voulez-vous vraiment supprimer ce contrat de location ? L'historique des paiements associé sera également supprimé. Cette action est irréversible.")) {
             setEnCours(true)
             try {
-                const result = await supprimerBien(id)
+                const result = await supprimerBail(id)
                 if (result?.error) {
                     alert(result.error)
+                } else {
+                    router.push('/baux')
                 }
             } catch (error) {
                 alert("Erreur lors de la suppression.")
@@ -28,7 +32,7 @@ export default function BoutonSupprimerBien({ id }: { id: string }) {
             onClick={handleSupprimer}
             disabled={enCours}
             className="flex items-center justify-center p-2.5 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-colors disabled:opacity-50"
-            title="Supprimer l'annonce"
+            title="Supprimer le bail"
         >
             <Trash2 className="w-5 h-5" />
         </button>

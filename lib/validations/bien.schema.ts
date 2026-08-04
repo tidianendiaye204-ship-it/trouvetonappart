@@ -19,6 +19,8 @@ export const bienSchema = z.object({
   publie: z.boolean().default(false),
   statut: statutBienSchema.default('disponible'),
   description: z.string().nullable().optional(),
+  telephone: z.string().optional().nullable(),
+  whatsapp: z.string().optional().nullable(),
 })
 
 export type BienFormData = z.infer<typeof bienSchema>

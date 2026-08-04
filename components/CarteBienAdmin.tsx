@@ -93,6 +93,22 @@ export default function CarteBienAdmin({ bien }: { bien: Bien }) {
 
                     <BoutonSupprimerBien id={bien.id} />
                 </div>
+
+                {/* Contact Direct */}
+                {(bien.telephone || bien.whatsapp) && (
+                  <div className="flex gap-2 pt-4 border-t border-ardoise-gris/10">
+                    {bien.telephone && (
+                      <a href={`tel:${bien.telephone}`} className="flex-1 flex items-center justify-center gap-2 bg-indigo-principal/10 hover:bg-indigo-principal text-indigo-principal hover:text-white rounded-xl py-2.5 text-xs font-bold transition-all">
+                        📞 {bien.telephone}
+                      </a>
+                    )}
+                    {bien.whatsapp && (
+                      <a href={`https://wa.me/${bien.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-2 bg-[#25D366]/10 hover:bg-[#25D366] text-[#25D366] hover:text-white rounded-xl py-2.5 text-xs font-bold transition-all">
+                        💬 WhatsApp
+                      </a>
+                    )}
+                  </div>
+                )}
                 {/* Sponsoring Section */}
                 <div className="mt-4 pt-4 border-t border-ardoise-gris/10">
                     {estSponsorise ? (
