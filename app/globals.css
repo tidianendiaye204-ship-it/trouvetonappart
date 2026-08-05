@@ -16,18 +16,31 @@
 /* Leaflet Customizations for a Premium look */
 .leaflet-popup-content-wrapper {
   border-radius: 1rem !important;
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+  box-shadow: 0 20px 40px -8px rgb(0 0 0 / 0.18), 0 8px 16px -6px rgb(0 0 0 / 0.1) !important;
   padding: 0 !important;
   overflow: hidden;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e2e8f0;
+  max-width: min(280px, calc(100vw - 32px)) !important;
 }
 .leaflet-popup-content {
   margin: 0 !important;
   line-height: normal !important;
+  width: auto !important;
 }
 .leaflet-popup-tip-container {
-  display: none !important; /* Hide the little triangle arrow */
+  display: none !important;
 }
 .leaflet-container {
   font-family: inherit;
+}
+/* Empêche le popup de déborder sur mobile */
+.leaflet-popup {
+  max-width: calc(100vw - 32px) !important;
+}
+/* Hover sur les marqueurs photo */
+.map-marker-photo {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.leaflet-marker-icon:hover .map-marker-photo {
+  transform: scale(1.08);
 }

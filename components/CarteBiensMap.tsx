@@ -7,22 +7,103 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-const createPriceIcon = (prix: number) => {
+import { Bien } from '@/types'
+
+// Couleurs du design system (valeurs HEX car les divIcon ne passent pas par Tailwind/CSS vars)
+const INDIGO = '#1B2A4A'
+const SAFRAN = '#F5A623'
+const BLANC = '#FFFFFF'
+const GRIS_BORD = '#E2E8F0'
+
+/**
+ * Crée un DivIcon Leaflet composite :
+ *  - miniature photo circulaire du bien (ou icône maison sur fond indigo si pas de photo)
+ *  - badge prix en dessous, centré
+ * On utilise inline styles + SVG pour rester indépendant de Tailwind.
+ */
+const createPhotoIcon = (imageSrc: string | null | undefined, prix: number, transaction: string) => {
+    const prixFormate = `${prix.toLocaleString('fr-FR')} FCFA`
+    const suffixe = transaction === 'location' ? '/mois' : ''
+
+    const photoHtml = imageSrc
+        ? `<img
+              src="${imageSrc}"
+              alt="bien"
+              style="
+                width:52px;height:52px;border-radius:50%;
+                object-fit:cover;
+                border:3px solid ${BLANC};
+                box-shadow:0 4px 12px rgba(0,0,0,0.25);
+                display:block;
+              "
+           />`
+        : `<div style="
+              width:52px;height:52px;border-radius:50%;
+              background:${INDIGO};
+              border:3px solid ${BLANC};
+              box-shadow:0 4px 12px rgba(0,0,0,0.25);
+              display:flex;align-items:center;justify-content:center;
+           ">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                  fill="none" stroke="${BLANC}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+               <polyline points="9 22 9 12 15 12 15 22"/>
+             </svg>
+           </div>`
+
+    const html = `
+      <div style="
+        display:flex;flex-direction:column;align-items:center;
+        transform:translate(-50%, -100%);
+        filter:drop-shadow(0 2px 6px rgba(0,0,0,0.18));
+        cursor:pointer;
+      ">
+        <!-- Photo / placeholder -->
+        <div style="
+          background:${BLANC};
+          border-radius:50%;
+          padding:2px;
+          transition:transform 0.2s ease;
+        " class="map-marker-photo">
+          ${photoHtml}
+        </div>
+
+        <!-- Badge prix -->
+        <div style="
+          margin-top:4px;
+          background:${INDIGO};
+          color:${BLANC};
+          font-size:10px;
+          font-weight:800;
+          padding:3px 8px;
+          border-radius:999px;
+          border:2px solid ${BLANC};
+          box-shadow:0 2px 6px rgba(0,0,0,0.2);
+          white-space:nowrap;
+          letter-spacing:0.01em;
+          line-height:1.3;
+        ">
+          ${prixFormate}${suffixe ? `<span style="font-weight:600;opacity:0.75;font-size:8px;"> ${suffixe}</span>` : ''}
+        </div>
+
+        <!-- Petite flèche -->
+        <div style="
+          width:0;height:0;
+          border-left:5px solid transparent;
+          border-right:5px solid transparent;
+          border-top:6px solid ${INDIGO};
+          margin-top:-2px;
+        "></div>
+      </div>
+    `
+
     return L.divIcon({
-        className: 'bg-transparent',
-        html: `<div class="relative group cursor-pointer" style="transform: translate(-50%, -100%); width: max-content;">
-                 <div class="bg-indigo-principal text-white px-3 py-1.5 rounded-full font-bold shadow-lg text-sm border-2 border-white group-hover:scale-110 group-hover:bg-safran-accent group-hover:text-quasi-noir transition-all duration-300">
-                   ${prix.toLocaleString('fr-FR')} FCFA
-                 </div>
-                 <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-8 border-t-white drop-shadow-sm group-hover:border-t-safran-accent transition-colors duration-300"></div>
-                 <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-[6px] border-t-indigo-principal group-hover:border-t-safran-accent transition-colors duration-300 z-10"></div>
-               </div>`,
+        className: 'bg-transparent border-0',
+        html,
         iconSize: [0, 0],
         iconAnchor: [0, 0],
     })
 }
-
-import { Bien } from '@/types'
 
 const CENTRE_DEFAUT: [number, number] = [14.6937, -17.4441] // Dakar
 
@@ -31,6 +112,15 @@ export default function CarteBiens({ biens }: { biens: Bien[] }) {
 
     useEffect(() => {
         setMounted(true)
+
+        // Fix icônes leaflet par défaut (nécessaire en SSR Next.js)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (L.Icon.Default.prototype as any)._getIconUrl
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        })
     }, [])
 
     const biensAvecCoords = useMemo(
@@ -38,17 +128,27 @@ export default function CarteBiens({ biens }: { biens: Bien[] }) {
         [biens]
     )
 
+    // Pré-calcul de toutes les icônes : mémorisé pour éviter les recréations à chaque render
+    const icones = useMemo(
+        () =>
+            biensAvecCoords.reduce<Record<string, L.DivIcon>>((acc, b) => {
+                acc[b.id] = createPhotoIcon(b.image_principale, b.prix, b.transaction)
+                return acc
+            }, {}),
+        [biensAvecCoords]
+    )
+
+    const centre: [number, number] = biensAvecCoords[0]
+        ? [biensAvecCoords[0].latitude!, biensAvecCoords[0].longitude!]
+        : CENTRE_DEFAUT
+
     if (!mounted) {
         return <div className="h-full w-full animate-pulse bg-gray-100 rounded-lg" />
     }
 
     return (
         <MapContainer
-            center={
-                biensAvecCoords[0]
-                    ? [biensAvecCoords[0].latitude!, biensAvecCoords[0].longitude!]
-                    : CENTRE_DEFAUT
-            }
+            center={centre}
             zoom={13}
             className="h-full w-full rounded-xl z-0 shadow-inner"
         >
@@ -56,55 +156,178 @@ export default function CarteBiens({ biens }: { biens: Bien[] }) {
                 attribution='&copy; <a href="https://carto.com/">Carto</a>'
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             />
+
             {biensAvecCoords.map((bien) => (
                 <Marker
                     key={bien.id}
                     position={[bien.latitude!, bien.longitude!]}
-                    icon={createPriceIcon(bien.prix)}
+                    icon={icones[bien.id]}
                 >
-                    <Popup closeButton={false} offset={[0, -25]}>
-                        <div className="w-64 rounded-xl overflow-hidden shadow-lg border border-ardoise-gris/10 bg-white p-0 flex flex-col -m-3.5">
-                            {/* Image placeholder ou vraie image */}
-                            <div className="relative h-32 bg-sable-fond w-full">
+                    <Popup
+                        closeButton={false}
+                        offset={[0, -30]}
+                        maxWidth={280}
+                        className="leaflet-popup-annonce"
+                    >
+                        {/* Popup card */}
+                        <div style={{ width: '260px', borderRadius: '16px', overflow: 'hidden', background: BLANC, fontFamily: 'inherit' }}>
+                            {/* --- Image --- */}
+                            <div style={{ position: 'relative', height: '140px', background: '#F5F3EE', overflow: 'hidden' }}>
                                 {bien.image_principale ? (
-                                    <Image src={bien.image_principale} alt={bien.titre} fill className="object-cover" />
+                                    <Image
+                                        src={bien.image_principale}
+                                        alt={bien.titre}
+                                        fill
+                                        style={{ objectFit: 'cover' }}
+                                        sizes="260px"
+                                    />
                                 ) : (
-                                    <div className="flex h-full w-full items-center justify-center text-ardoise-gris/50">
-                                        Pas de photo
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        display: 'flex', flexDirection: 'column',
+                                        alignItems: 'center', justifyContent: 'center',
+                                        color: '#8B93A1', gap: '6px'
+                                    }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                            <polyline points="9 22 9 12 15 12 15 22" />
+                                        </svg>
+                                        <span style={{ fontSize: '11px', fontWeight: 600 }}>Pas de photo</span>
                                     </div>
                                 )}
-                                <div className="absolute top-2 left-2 flex gap-2">
+
+                                {/* Badges superposés */}
+                                <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', gap: '4px' }}>
                                     {bien.transaction && (
-                                        <span className="bg-white/90 backdrop-blur-md text-quasi-noir px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                                        <span style={{
+                                            background: 'rgba(255,255,255,0.92)',
+                                            backdropFilter: 'blur(6px)',
+                                            color: INDIGO,
+                                            padding: '2px 8px',
+                                            borderRadius: '999px',
+                                            fontSize: '10px',
+                                            fontWeight: 800,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            boxShadow: '0 1px 4px rgba(0,0,0,0.12)'
+                                        }}>
                                             {bien.transaction === 'location' ? 'À Louer' : 'À Vendre'}
+                                        </span>
+                                    )}
+                                    {bien.type && (
+                                        <span style={{
+                                            background: 'rgba(15,23,32,0.72)',
+                                            backdropFilter: 'blur(6px)',
+                                            color: BLANC,
+                                            padding: '2px 8px',
+                                            borderRadius: '999px',
+                                            fontSize: '10px',
+                                            fontWeight: 700,
+                                            textTransform: 'capitalize',
+                                        }}>
+                                            {bien.type}
                                         </span>
                                     )}
                                 </div>
                             </div>
-                            
-                            <div className="p-4 flex flex-col gap-2">
-                                <h3 className="font-display font-bold text-quasi-noir text-base leading-snug line-clamp-1" title={bien.titre}>
+
+                            {/* --- Contenu texte --- */}
+                            <div style={{ padding: '12px 14px 14px' }}>
+                                {/* Titre */}
+                                <p style={{
+                                    fontWeight: 800,
+                                    fontSize: '14px',
+                                    color: '#0F1720',
+                                    marginBottom: '2px',
+                                    lineHeight: '1.3',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                }}>
                                     {bien.titre}
-                                </h3>
-                                <div className="text-indigo-principal font-black text-lg">
-                                    {bien.prix.toLocaleString('fr-FR')} <span className="text-xs font-bold">FCFA</span>
-                                </div>
-                                {(bien.telephone || bien.whatsapp) && (
-                                  <div className="flex gap-2 mt-1">
-                                    {bien.telephone && (
-                                      <a href={`tel:${bien.telephone}`} className="flex-1 flex items-center justify-center gap-1 bg-indigo-principal/10 hover:bg-indigo-principal text-indigo-principal hover:text-white rounded-full py-1.5 text-xs font-bold transition-all" onClick={(e) => e.stopPropagation()}>
-                                        📞 Appeler
-                                      </a>
-                                    )}
-                                    {bien.whatsapp && (
-                                      <a href={`https://wa.me/${bien.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1 bg-[#25D366]/10 hover:bg-[#25D366] text-[#25D366] hover:text-white rounded-full py-1.5 text-xs font-bold transition-all" onClick={(e) => e.stopPropagation()}>
-                                        💬 WhatsApp
-                                      </a>
-                                    )}
-                                  </div>
+                                </p>
+
+                                {/* Localisation */}
+                                {(bien.quartier || bien.ville) && (
+                                    <p style={{
+                                        fontSize: '11px',
+                                        color: '#8B93A1',
+                                        marginBottom: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '3px'
+                                    }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                            <circle cx="12" cy="10" r="3" />
+                                        </svg>
+                                        {bien.quartier ? `${bien.quartier}, ` : ''}{bien.ville ?? ''}
+                                    </p>
                                 )}
-                                <Link href={`/annonce/${bien.id}`} className="mt-2 w-full bg-indigo-principal text-white rounded-full py-2 text-sm font-bold hover:brightness-110 transition-all active:scale-[0.98] text-center block">
-                                    Voir les détails
+
+                                {/* Prix */}
+                                <div style={{ marginBottom: '10px' }}>
+                                    <p style={{ fontSize: '9px', color: '#8B93A1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1px' }}>
+                                        Prix {bien.transaction === 'location' ? 'mensuel' : 'demandé'}
+                                    </p>
+                                    <p style={{ fontSize: '18px', fontWeight: 900, color: INDIGO, lineHeight: 1.1 }}>
+                                        {bien.prix.toLocaleString('fr-FR')}{' '}
+                                        <span style={{ fontSize: '12px', fontWeight: 700 }}>FCFA</span>
+                                        {bien.transaction === 'location' && (
+                                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#8B93A1' }}> /mois</span>
+                                        )}
+                                    </p>
+                                </div>
+
+                                {/* Boutons contact si disponibles */}
+                                {(bien.telephone || bien.whatsapp) && (
+                                    <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
+                                        {bien.telephone && (
+                                            <a
+                                                href={`tel:${bien.telephone}`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                style={{
+                                                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                                    background: `${INDIGO}18`, color: INDIGO, borderRadius: '999px',
+                                                    padding: '6px 4px', fontSize: '11px', fontWeight: 700, textDecoration: 'none',
+                                                }}
+                                            >
+                                                📞 Appeler
+                                            </a>
+                                        )}
+                                        {bien.whatsapp && (
+                                            <a
+                                                href={`https://wa.me/${bien.whatsapp.replace(/\D/g, '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                style={{
+                                                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                                    background: '#25D36618', color: '#25D366', borderRadius: '999px',
+                                                    padding: '6px 4px', fontSize: '11px', fontWeight: 700, textDecoration: 'none',
+                                                }}
+                                            >
+                                                💬 WhatsApp
+                                            </a>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Lien "Voir l'annonce" */}
+                                <Link
+                                    href={`/annonce/${bien.id}`}
+                                    style={{
+                                        display: 'block', textAlign: 'center', textDecoration: 'none',
+                                        background: INDIGO, color: BLANC,
+                                        borderRadius: '999px', padding: '9px 12px',
+                                        fontSize: '12px', fontWeight: 800,
+                                        letterSpacing: '0.02em',
+                                    }}
+                                >
+                                    Voir l&apos;annonce →
                                 </Link>
                             </div>
                         </div>
@@ -113,4 +336,4 @@ export default function CarteBiens({ biens }: { biens: Bien[] }) {
             ))}
         </MapContainer>
     )
-}
+}
