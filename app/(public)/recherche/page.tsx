@@ -30,7 +30,7 @@ export default async function RecherchePage({
     ].filter(Boolean)
 
     return (
-        <div className="flex flex-col-reverse lg:flex-row h-screen pt-20 bg-sable-fond">
+        <div className="flex flex-col-reverse lg:flex-row h-[calc(100vh-5rem)] mt-20 bg-sable-fond">
             {/* ── Colonne liste + filtres ── */}
             <div className="w-full lg:w-1/2 overflow-y-auto border-t lg:border-t-0 lg:border-r border-ardoise-gris/20 h-[50vh] lg:h-full flex flex-col">
 
