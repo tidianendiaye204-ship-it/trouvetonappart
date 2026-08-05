@@ -52,7 +52,7 @@ function SkeletonCarteAnnonce() {
         <div className="rounded-3xl border border-ardoise-gris/10 bg-white overflow-hidden">
             {/* Image skeleton avec shimmer */}
             <div className="relative aspect-4/3 w-full bg-ardoise-gris/10 overflow-hidden">
-                <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+                <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-linear-to-r from-transparent via-white/60 to-transparent" />
                 {/* Badge skeleton */}
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
                     <div className="h-5 w-16 bg-white/70 rounded-full animate-pulse" />
