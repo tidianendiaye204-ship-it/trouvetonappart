@@ -62,11 +62,14 @@ type ClusterLayerProps = {
     biens: Bien[]
     icones: Record<string, L.DivIcon>
     onMarkerClick: (bien: Bien, latlng: L.LatLng) => void
+    hoveredBienId?: string | null
 }
 
-function ClusterLayer({ biens, icones, onMarkerClick }: ClusterLayerProps) {
+function ClusterLayer({ biens, icones, onMarkerClick, hoveredBienId }: ClusterLayerProps) {
     const map = useMap()
     const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null)
+    // Stocke les refs DOM des icônes de marqueurs individuels pour le highlight
+    const markerRefsById = useRef<Record<string, L.Marker>>({})
 
     useEffect(() => {
         // Importer dynamiquement pour éviter les problèmes SSR
@@ -78,6 +81,7 @@ function ClusterLayer({ biens, icones, onMarkerClick }: ClusterLayerProps) {
         if (clusterGroupRef.current) {
             map.removeLayer(clusterGroupRef.current)
         }
+        markerRefsById.current = {}
 
         const group = L.markerClusterGroup({
             maxClusterRadius: 60,
@@ -118,6 +122,7 @@ function ClusterLayer({ biens, icones, onMarkerClick }: ClusterLayerProps) {
                     onMarkerClick(bien, marker.getLatLng())
                 })
                 group.addLayer(marker)
+                markerRefsById.current[bien.id] = marker
             })
 
         map.addLayer(group)
@@ -130,6 +135,28 @@ function ClusterLayer({ biens, icones, onMarkerClick }: ClusterLayerProps) {
             }
         }
     }, [biens, icones, map, onMarkerClick])
+
+    // Highlight du marqueur survolé dans la liste
+    useEffect(() => {
+        Object.entries(markerRefsById.current).forEach(([id, marker]) => {
+            const el = marker.getElement()
+            if (!el) return
+            const inner = el.querySelector('.map-marker-photo') as HTMLElement | null
+            if (id === hoveredBienId) {
+                el.style.zIndex = '1000'
+                if (inner) {
+                    inner.style.transform = 'scale(1.25)'
+                    inner.style.filter = 'drop-shadow(0 0 8px rgba(27,42,74,0.6))'
+                }
+            } else {
+                el.style.zIndex = ''
+                if (inner) {
+                    inner.style.transform = ''
+                    inner.style.filter = ''
+                }
+            }
+        })
+    }, [hoveredBienId])
 
     return null
 }
@@ -275,7 +302,7 @@ function buildPopupHTML(bien: Bien): string {
 // ─────────────────────────────────────────────────────────────────────────────
 const CENTRE_DEFAUT: [number, number] = [14.6937, -17.4441]
 
-export default function CarteBiens({ biens }: { biens: Bien[] }) {
+export default function CarteBiens({ biens, hoveredBienId }: { biens: Bien[], hoveredBienId?: string | null }) {
     const [mounted, setMounted] = useState(false)
     const [popupState, setPopupState] = useState<PopupState>(null)
 
@@ -337,6 +364,7 @@ export default function CarteBiens({ biens }: { biens: Bien[] }) {
                 biens={biensAvecCoords}
                 icones={icones}
                 onMarkerClick={handleMarkerClick}
+                hoveredBienId={hoveredBienId}
             />
 
             {/* Popup manuel au clic (compatible avec le cluster natif Leaflet) */}

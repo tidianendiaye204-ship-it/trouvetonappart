@@ -1,6 +1,11 @@
 @import url('https://api.fontshare.com/v2/css?f[]=clash-display@700,600&display=swap');
 @import "tailwindcss";
 
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+
 @theme {
   --color-indigo-principal: #1B2A4A;
   --color-safran-accent: #F5A623;

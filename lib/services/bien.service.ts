@@ -34,6 +34,7 @@ export async function searchBiensPubliques(filtres?: {
   ville?: string
   prix_min?: string
   prix_max?: string
+  tri?: string
 }): Promise<Bien[]> {
   const supabase = await createClient()
 
@@ -42,7 +43,21 @@ export async function searchBiensPubliques(filtres?: {
     .select('id, titre, type, transaction, prix, superficie, nb_chambres, quartier, ville, adresse, latitude, longitude, sponsorise_jusqu_a, telephone, whatsapp, biens_images(url, ordre)')
     .eq('publie', true)
     .order('sponsorise_jusqu_a', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
+
+  // Tri secondaire selon le paramètre
+  switch (filtres?.tri) {
+    case 'prix_asc':
+      query = query.order('prix', { ascending: true })
+      break
+    case 'prix_desc':
+      query = query.order('prix', { ascending: false })
+      break
+    case 'superficie':
+      query = query.order('superficie', { ascending: false, nullsFirst: false })
+      break
+    default:
+      query = query.order('created_at', { ascending: false })
+  }
 
   if (filtres?.type) query = query.eq('type', filtres.type)
   if (filtres?.transaction) query = query.eq('transaction', filtres.transaction)

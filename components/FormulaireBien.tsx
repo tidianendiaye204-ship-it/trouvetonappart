@@ -9,6 +9,24 @@ import ChampAdresse from './ChampAdresse'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { bienSchema, BienFormData } from '@/lib/validations/bien.schema'
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    rectSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { GripVertical } from 'lucide-react'
 
 export default function FormulaireBien({ bien }: { bien?: any }) {
     const router = useRouter()
@@ -50,7 +68,14 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
     // Pour l'édition, on garde les anciennes images affichées et on permet d'en rajouter des nouvelles.
     const [anciennesImages, setAnciennesImages] = useState<any[]>(bien?.biens_images || [])
     const [images, setImages] = useState<File[]>([])
-    
+    const [previews, setPreviews] = useState<string[]>([])
+
+    // Sensors pour le drag & drop des photos
+    const dndSensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    )
+
     const [erreur, setErreur] = useState<string | null>(null)
     const [isDeletingImg, setIsDeletingImg] = useState(false)
 
@@ -157,6 +182,25 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
                 setIsDeletingImg(false)
             }
         }
+    }
+
+    async function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event
+        if (!over || active.id === over.id) return
+
+        const oldIndex = anciennesImages.findIndex((img) => img.id === active.id)
+        const newIndex = anciennesImages.findIndex((img) => img.id === over.id)
+        const newOrder = arrayMove(anciennesImages, oldIndex, newIndex)
+
+        // Mise à jour optimiste
+        setAnciennesImages(newOrder)
+
+        // Sauvegarde de l'ordre en base
+        await Promise.all(
+            newOrder.map((img, idx) =>
+                supabase.from('biens_images').update({ ordre: idx }).eq('id', img.id)
+            )
+        )
     }
 
     return (
@@ -307,15 +351,31 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
             <div className="pt-2">
                 {isEditMode && anciennesImages.length > 0 && (
                     <>
-                        <label className="block text-sm font-medium mb-3 text-quasi-noir">Photos actuelles</label>
-                        <div className="flex gap-4 mb-4 overflow-x-auto pb-2">
-                            {anciennesImages.map((img: any) => (
-                                <div key={img.id} className="relative shrink-0 w-24 h-24">
-                                    <Image src={img.url} alt="Photo du bien" fill className="object-cover rounded-xl" />
-                                    <button onClick={(e) => handleDeleteAncienneImage(img.id, e)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs hover:bg-red-600 shadow-sm">&times;</button>
+                        <label className="block text-sm font-medium mb-1 text-quasi-noir">Photos actuelles</label>
+                        <p className="text-xs text-ardoise-gris mb-3 flex items-center gap-1">
+                            <GripVertical className="w-3 h-3" /> Glissez pour réordonner — la 1ère photo sera l&apos;image principale
+                        </p>
+                        <DndContext
+                            sensors={dndSensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={anciennesImages.map((img) => img.id)}
+                                strategy={rectSortingStrategy}
+                            >
+                                <div className="flex gap-3 mb-4 overflow-x-auto pb-2 flex-wrap">
+                                    {anciennesImages.map((img: any, idx: number) => (
+                                        <SortableImage
+                                            key={img.id}
+                                            img={img}
+                                            idx={idx}
+                                            onDelete={handleDeleteAncienneImage}
+                                        />
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </SortableContext>
+                        </DndContext>
                     </>
                 )}
                 {isEditMode && anciennesImages.length === 0 && (
@@ -330,7 +390,11 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
                         type="file"
                         accept="image/*"
                         multiple
-                        onChange={(e) => setImages(Array.from(e.target.files ?? []))}
+                        onChange={(e) => {
+                            const files = Array.from(e.target.files ?? [])
+                            setImages(files)
+                            setPreviews(files.map((f) => URL.createObjectURL(f)))
+                        }}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
                     <div className="w-16 h-16 bg-indigo-principal/10 text-indigo-principal rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -342,8 +406,35 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
                     <p className="text-sm text-ardoise-gris">ou glissez-les ici (PNG, JPG, max 5MB)</p>
 
                     {images.length > 0 && (
-                        <div className="mt-6 w-full flex flex-wrap gap-2 justify-center border-t border-ardoise-gris/20 pt-6">
-                            <span className="text-sm font-bold text-white bg-indigo-principal px-3 py-1 rounded-full">{images.length} {isEditMode ? 'nouvelle(s) photo(s)' : 'fichier(s) sélectionné(s)'}</span>
+                        <div className="mt-6 w-full border-t border-ardoise-gris/20 pt-4">
+                            <p className="text-xs font-bold text-ardoise-gris uppercase tracking-wide mb-3 text-left">
+                                {images.length} photo{images.length > 1 ? 's' : ''} sélectionnée{images.length > 1 ? 's' : ''}
+                            </p>
+                            <div className="flex flex-wrap gap-2 justify-start">
+                                {previews.map((src, idx) => (
+                                    <div key={src} className="relative w-20 h-20 shrink-0">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={src}
+                                            alt={`Aperçu ${idx + 1}`}
+                                            className="w-full h-full object-cover rounded-xl border border-ardoise-gris/20 shadow-sm"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                const newImages = images.filter((_, i) => i !== idx)
+                                                const newPreviews = previews.filter((_, i) => i !== idx)
+                                                setImages(newImages)
+                                                setPreviews(newPreviews)
+                                            }}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-xs hover:bg-red-600 shadow-sm z-20"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -361,5 +452,61 @@ export default function FormulaireBien({ bien }: { bien?: any }) {
                 </button>
             </div>
         </form>
+    )
+}
+
+// ─── Composant SortableImage (drag & drop avec @dnd-kit) ──────────────────────
+function SortableImage({
+    img,
+    idx,
+    onDelete,
+}: {
+    img: any
+    idx: number
+    onDelete: (id: string, e: React.MouseEvent) => void
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: img.id })
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        cursor: isDragging ? 'grabbing' : 'grab',
+    }
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            className="relative shrink-0 w-24 h-24 select-none"
+        >
+            <Image
+                src={img.url}
+                alt="Photo du bien"
+                fill
+                className="object-cover rounded-xl shadow-sm border border-ardoise-gris/10"
+                draggable={false}
+            />
+            {/* Badge image principale */}
+            {idx === 0 && (
+                <span className="absolute bottom-1 left-1 right-1 bg-indigo-principal/90 text-white text-[9px] font-bold text-center rounded-md py-0.5 leading-none">
+                    Principale
+                </span>
+            )}
+            {/* Bouton supprimer */}
+            <button
+                type="button"
+                onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete(img.id, e)
+                }}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs hover:bg-red-600 shadow-sm z-20"
+                style={{ cursor: 'pointer' }}
+            >
+                &times;
+            </button>
+        </div>
     )
 }
