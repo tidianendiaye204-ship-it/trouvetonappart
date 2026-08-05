@@ -10,12 +10,14 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import FooterWrapper from '@/components/FooterWrapper'
 
 export const viewport: Viewport = {
   themeColor: '#4F46E5',
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://trouvetonappartement.sn'),
   title: 'Trouve ton appartement',
   description: 'Trouvez facilement un appartement ou une maison au Sénégal',
   manifest: '/manifest.json',
@@ -23,6 +25,14 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'Trouve Appart',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'fr_SN',
+    url: '/',
+    title: 'Trouve ton appartement au Sénégal',
+    description: 'La meilleure plateforme pour louer, acheter ou vendre votre bien immobilier au Sénégal (Dakar, Thiès, Saly...).',
+    siteName: 'Trouve ton appartement',
   },
 }
 
@@ -41,7 +51,48 @@ export default function RootLayout({
         <main className="flex-1">
           {children}
         </main>
-        <Footer />
+        <FooterWrapper>
+          <Footer />
+        </FooterWrapper>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "WebSite",
+                  "@id": "https://trouvetonappartement.sn/#website",
+                  "url": "https://trouvetonappartement.sn/",
+                  "name": "Trouve ton appartement",
+                  "description": "Trouvez facilement un appartement ou une maison au Sénégal",
+                  "potentialAction": [{
+                    "@type": "SearchAction",
+                    "target": {
+                      "@type": "EntryPoint",
+                      "urlTemplate": "https://trouvetonappartement.sn/recherche?q={search_term_string}"
+                    },
+                    "query-input": "required name=search_term_string"
+                  }]
+                },
+                {
+                  "@type": "Organization",
+                  "@id": "https://trouvetonappartement.sn/#organization",
+                  "name": "TrouveTonAppartement.sn",
+                  "url": "https://trouvetonappartement.sn/",
+                  "logo": "https://trouvetonappartement.sn/icon.svg",
+                  "contactPoint": {
+                    "@type": "ContactPoint",
+                    "telephone": "+221770000000",
+                    "contactType": "customer service",
+                    "areaServed": "SN",
+                    "availableLanguage": "French"
+                  }
+                }
+              ]
+            })
+          }}
+        />
       </body>
     </html>
   )

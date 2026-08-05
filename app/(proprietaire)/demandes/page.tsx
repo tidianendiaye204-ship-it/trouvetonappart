@@ -16,7 +16,7 @@ export default async function DemandesPage() {
   // Récupérer les demandes pour les biens du propriétaire
   const { data: demandes } = await supabase
     .from('contacts_demandes')
-    .select('*, biens!inner(titre, proprietaire_id)')
+    .select('*, biens!inner(titre, proprietaire_id), crm_events(*)')
     .eq('biens.proprietaire_id', user.id)
     .order('created_at', { ascending: false })
 

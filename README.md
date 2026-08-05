@@ -25,6 +25,18 @@ cd trouvetonappartement
 npm install
 ```
 
+- Pagination & filtres avancés (prix, localisation)
+- Modération admin / validation
+
+## Monétisation (Sponsorisation)
+
+Le projet intègre un système complet de monétisation permettant aux propriétaires de payer pour mettre leurs annonces en avant :
+- **Plans tarifaires** : 7 jours (2 500 CFA), 14 jours (4 500 CFA), 30 jours (8 900 CFA). Modifiables dans `lib/sponsoring/config.ts`.
+- **Abstraction PSP** : Les paiements sont gérés via une couche abstraite `IPaymentProvider` (`lib/sponsoring/provider.ts`). 
+- **Mode Mock** : Par défaut, le provider `mock` est activé, simulant un paiement réussi instantané (parfait pour le développement).
+- **Dashboard** : Historique complet des transactions (`/mes-annonces/sponsorisations`) et agrégation des revenus.
+- **Intégration PSP Réel** : Pour intégrer Wave, Orange Money ou PayDunya, il suffit de créer un nouveau provider implémentant `IPaymentProvider` et de configurer l'URL de webhook dans `app/api/sponsoring/webhook/route.ts`.
+
 3. Configuration des variables d'environnement :
 Créez un fichier `.env.local` à la racine du projet et ajoutez vos clés Supabase et Turnstile :
 ```env

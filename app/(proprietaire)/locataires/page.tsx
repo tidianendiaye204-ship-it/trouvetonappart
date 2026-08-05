@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Users, PlusCircle, ArrowLeft, Mail, Phone } from 'lucide-react'
 import BoutonSupprimerLocataire from '@/components/BoutonSupprimerLocataire'
+import BoutonLienPortail from '@/components/BoutonLienPortail'
 
 export default async function LocatairesPage() {
   const supabase = await createClient()
@@ -94,11 +95,16 @@ export default async function LocatairesPage() {
                     {locataire.cni || <span className="text-ardoise-gris/50 italic">Non renseigné</span>}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button className="text-indigo-principal hover:underline font-bold text-sm">
-                        Détails
-                      </button>
-                      <BoutonSupprimerLocataire id={locataire.id} />
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-2">
+                        <button className="text-indigo-principal hover:underline font-bold text-sm">
+                          Détails
+                        </button>
+                        <BoutonSupprimerLocataire id={locataire.id} />
+                      </div>
+                      {locataire.access_token && (
+                        <BoutonLienPortail token={locataire.access_token} prenom={locataire.prenom} />
+                      )}
                     </div>
                   </td>
                 </tr>

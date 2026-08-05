@@ -117,14 +117,12 @@ export default function CarteBienAdmin({ bien }: { bien: Bien }) {
                             <span className="text-xs text-ardoise-gris">Jusqu'au {new Date(bien.sponsorise_jusqu_a!).toLocaleDateString('fr-FR')}</span>
                         </div>
                     ) : (
-                        <form action={activerSponsoring.bind(null, bien.id)}>
-                            <button 
-                                type="submit" 
-                                className="w-full flex items-center justify-center gap-2 bg-safran-accent hover:brightness-105 text-quasi-noir rounded-xl py-2.5 text-sm font-bold shadow-sm transition-all"
-                            >
-                                <span className="text-lg leading-none">⭐</span> Mettre en avant
-                            </button>
-                        </form>
+                        <Link 
+                            href={`/mes-annonces/${bien.id}/sponsoriser`}
+                            className="w-full flex items-center justify-center gap-2 bg-safran-accent hover:brightness-105 text-quasi-noir rounded-xl py-2.5 text-sm font-bold shadow-sm transition-all"
+                        >
+                            <span className="text-lg leading-none">⭐</span> Mettre en avant
+                        </Link>
                     )}
                 </div>
             </div>

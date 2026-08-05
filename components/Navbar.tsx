@@ -8,6 +8,12 @@ export default async function Navbar() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  let isAdmin = false
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    isAdmin = profile?.role === 'admin'
+  }
+
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl border-b border-ardoise-gris/10 transition-all duration-300">
       <div className="max-w-7xl mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -26,6 +32,9 @@ export default async function Navbar() {
             <Link href="/#fonctionnalites" className="text-sm font-bold text-ardoise-gris hover:text-indigo-principal transition-colors">
               Fonctionnalités
             </Link>
+            <Link href="/tarifs" className="text-sm font-bold text-ardoise-gris hover:text-indigo-principal transition-colors">
+              Tarifs
+            </Link>
             <Link href="/#comment-ca-marche" className="text-sm font-bold text-ardoise-gris hover:text-indigo-principal transition-colors">
               Comment ça marche
             </Link>
@@ -40,8 +49,14 @@ export default async function Navbar() {
           
           <BoutonInstallation />
 
+          {isAdmin && (
+            <Link href="/admin" className="bg-red-50 text-red-600 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-sm hover:-translate-y-0.5 transition-all active:scale-95">
+              Admin
+            </Link>
+          )}
+
           {user ? (
-            <Link href="/mes-annonces" className="bg-white border-2 border-indigo-principal text-indigo-principal px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-sm hover:-translate-y-0.5 transition-all active:scale-95">
+            <Link href="/dashboard" className="bg-white border-2 border-indigo-principal text-indigo-principal px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-sm hover:-translate-y-0.5 transition-all active:scale-95">
               Espace Pro
             </Link>
           ) : (

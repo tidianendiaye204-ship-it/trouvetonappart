@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import FormulaireContact from '@/components/FormulaireContact'
+import BoutonSignaler from '@/components/BoutonSignaler'
 import { MapPin, BedDouble, Maximize2, Home, ArrowLeft } from 'lucide-react'
 
 function raccourcirAdresse(adresseComplete: string): string {
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   
   const { data: bien } = await supabase
     .from('biens')
-    .select('titre, description, prix, type, transaction, biens_images(url, ordre)')
+    .select('id, titre, description, prix, type, transaction, ville, quartier, latitude, longitude, created_at, statut, biens_images(url, ordre)')
     .eq('id', id)
     .single()
 
@@ -36,11 +37,22 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return {
     title: `${bien.titre} | TrouveTonAppart`,
     description: description,
+    alternates: {
+      canonical: `/annonce/${bien.id}`,
+    },
+    keywords: [`${bien.type}`, `${bien.transaction}`, 'Sénégal', 'Immobilier', 'TrouveTonAppart', bien.ville || ''],
     openGraph: {
       title: `${bien.titre} - ${prixStr}`,
       description: description,
       images: imageUrl ? [{ url: imageUrl }] : [],
-      type: 'website',
+      type: 'article',
+      url: `/annonce/${bien.id}`,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${bien.titre} - ${prixStr}`,
+      description: description,
+      images: imageUrl ? [imageUrl] : [],
     },
   }
 }
@@ -55,9 +67,8 @@ export default async function AnnoncePage({
 
   const { data: bien } = await supabase
     .from('biens')
-    .select('*, biens_images(url, ordre)')
+    .select('*, biens_images(url, ordre), profiles(nom)')
     .eq('id', id)
-    .eq('publie', true)
     .single()
 
   if (!bien) notFound()
@@ -65,10 +76,46 @@ export default async function AnnoncePage({
   const images = (bien.biens_images ?? []).sort(
     (a: { ordre: number }, b: { ordre: number }) => a.ordre - b.ordre
   )
+  const isDisponible = bien.statut === 'disponible'
+
+  // Schema.org RealEstateListing
+  const schemaOrg = {
+    "@context": "https://schema.org",
+    "@type": "RealEstateListing",
+    "name": bien.titre,
+    "description": bien.description || `${bien.type} à ${bien.transaction}`,
+    "image": images.map((i: any) => i.url),
+    "datePosted": bien.created_at,
+    "offers": {
+      "@type": "Offer",
+      "price": bien.prix,
+      "priceCurrency": "XOF",
+      "availability": isDisponible ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+      "url": `https://trouvetonappartement.sn/annonce/${bien.id}`
+    },
+    "place": {
+      "@type": "Place",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": bien.ville,
+        "addressRegion": bien.quartier,
+        "addressCountry": "SN"
+      },
+      "geo": (bien.latitude && bien.longitude) ? {
+        "@type": "GeoCoordinates",
+        "latitude": bien.latitude,
+        "longitude": bien.longitude
+      } : undefined
+    }
+  }
 
   return (
-    <div className="bg-sable-fond min-h-screen pt-24 pb-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+    <div className="min-h-screen bg-sable-fond pt-8 pb-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         
         {/* En-tête de retour */}
         <div className="mb-6">
@@ -209,8 +256,15 @@ export default async function AnnoncePage({
 
                 <hr className="border-ardoise-gris/10 mb-8" />
 
-                {/* Formulaire Contact */}
-                <FormulaireContact bienId={bien.id} />
+                {/* Formulaire de Contact */}
+                <div className="bg-white rounded-3xl p-8 shadow-xl border border-ardoise-gris/10">
+                  <h2 className="text-xl font-bold text-quasi-noir mb-6">Contacter le propriétaire</h2>
+                  <FormulaireContact 
+                    bienId={bien.id} 
+                  />
+                  
+                  <BoutonSignaler bienId={bien.id} />
+                </div>
                 
               </div>
             </div>

@@ -5,6 +5,7 @@ import CarteBienAdmin from '@/components/CarteBienAdmin'
 import BoutonRetour from '@/components/BoutonRetour'
 import { PlusCircle, MessageSquare, Home, BarChart3, Users, UserPlus, FileText, AlertTriangle, ArrowRight, Wallet, Star } from 'lucide-react'
 import { getBiensProprietaire } from '@/lib/services/bien.service'
+import { getRevenusSponsoring, getNbBiensSponsorises } from '@/lib/services/sponsoring.service'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -92,6 +93,10 @@ export default async function DashboardPage() {
 
   const biensAffiches = biens || []
 
+  // 5. Fetch Sponsoring KPI
+  const revenusSponsoring = await getRevenusSponsoring(user.id)
+  const nbBiensSponsorises = await getNbBiensSponsorises(user.id)
+
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
       
@@ -124,7 +129,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-12 gap-6 mb-12">
         
         {/* BIG KPI: Revenus */}
-        <div className="col-span-1 md:col-span-3 lg:col-span-4 bg-white rounded-3xl p-8 border border-ardoise-gris/10 shadow-sm relative overflow-hidden group hover:shadow-lg transition-shadow">
+        <div className="col-span-1 md:col-span-3 lg:col-span-3 bg-white rounded-3xl p-8 border border-ardoise-gris/10 shadow-sm relative overflow-hidden group hover:shadow-lg transition-shadow">
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-principal/5 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
           <div className="flex justify-between items-start mb-8">
             <div className="w-12 h-12 bg-indigo-principal/10 rounded-2xl flex items-center justify-center">
@@ -147,7 +152,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* ALERTE: Retards */}
-        <div className="col-span-1 md:col-span-3 lg:col-span-4 bg-[#FFF5F5] rounded-3xl p-8 border border-red-100 shadow-sm relative overflow-hidden">
+        <div className="col-span-1 md:col-span-3 lg:col-span-3 bg-[#FFF5F5] rounded-3xl p-8 border border-red-100 shadow-sm relative overflow-hidden">
           <div className="flex justify-between items-start mb-8">
             <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center">
               <AlertTriangle className="w-6 h-6 text-red-500" />
@@ -173,7 +178,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* KPI: Biens & Taux */}
-        <div className="col-span-1 md:col-span-6 lg:col-span-4 bg-quasi-noir rounded-3xl p-8 shadow-xl relative overflow-hidden group">
+        <div className="col-span-1 md:col-span-3 lg:col-span-3 bg-quasi-noir rounded-3xl p-8 shadow-xl relative overflow-hidden group">
           <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all"></div>
           <div className="flex justify-between items-start mb-8 relative z-10">
             <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -192,6 +197,29 @@ export default async function DashboardPage() {
             <div className="mt-2 flex justify-between text-sm">
               <span className="text-white/60">Locataires actifs</span>
               <span className="text-white font-bold">{totalLocataires}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI: Sponsoring */}
+        <div className="col-span-1 md:col-span-3 lg:col-span-3 bg-linear-to-br from-safran-accent to-[#F58223] rounded-3xl p-8 shadow-xl relative overflow-hidden group">
+          <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
+          <div className="flex justify-between items-start mb-8 relative z-10">
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+              <Star className="w-6 h-6 text-white" />
+            </div>
+            <Link href="/mes-annonces/sponsorisations" className="text-xs font-bold text-white bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full uppercase tracking-wider transition-colors flex items-center gap-1 backdrop-blur-md">
+              Gérer <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="relative z-10">
+            <p className="text-sm font-medium text-white/80 mb-1">Impact Sponsoring</p>
+            <h3 className="font-display text-4xl font-black text-white">
+              {nbBiensSponsorises} <span className="text-xl font-medium text-white/90">actifs</span>
+            </h3>
+            <div className="mt-4 pt-4 border-t border-white/20 flex justify-between text-sm">
+              <span className="text-white/80">Revenus</span>
+              <span className="text-white font-bold">{new Intl.NumberFormat('fr-SN').format(revenusSponsoring.revenus_totaux)} CFA</span>
             </div>
           </div>
         </div>

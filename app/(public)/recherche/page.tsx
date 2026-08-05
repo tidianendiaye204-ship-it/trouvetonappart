@@ -18,6 +18,25 @@ const TRI_LABELS: Record<string, string> = {
     superficie: 'Superficie',
 }
 
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Recherche> }): Promise<import('next').Metadata> {
+    const { type, transaction, ville } = await searchParams
+    
+    const typeLabel = type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Biens immobiliers'
+    const transacLabel = transaction === 'location' ? 'à louer' : transaction === 'vente' ? 'à vendre' : 'à louer ou à vendre'
+    const villeLabel = ville ? ` à ${ville}` : ' au Sénégal'
+    
+    const title = `${typeLabel} ${transacLabel}${villeLabel} | TrouveTonAppart`
+    const description = `Parcourez nos annonces de ${type || 'biens'} ${transacLabel}${villeLabel}. Trouvez le bien idéal au meilleur prix sur TrouveTonAppartement.sn.`
+    
+    return {
+        title,
+        description,
+        alternates: {
+            canonical: '/recherche',
+        }
+    }
+}
+
 export default async function RecherchePage({
     searchParams,
 }: {

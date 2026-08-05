@@ -1,40 +1,59 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { checkRateLimit, isValidPhone, sanitizeText } from '@/lib/security'
+import { trackServerEvent } from '@/lib/analytics'
 
 const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 export async function submitContact(formData: FormData) {
+  // --- 1. RATE LIMITING ---
+  // Max 3 envois par minute par IP
+  const isAllowed = await checkRateLimit('contact_submit', 3, 60)
+  if (!isAllowed) {
+    return { success: false, error: "Vous avez envoyé trop de requêtes. Veuillez patienter 1 minute." }
+  }
+
   const token = formData.get('cf-turnstile-response')
-  const nom = formData.get('nom') as string
-  const telephone = formData.get('telephone') as string
-  const message = formData.get('message') as string
+  const rawNom = formData.get('nom') as string
+  const rawTelephone = formData.get('telephone') as string
+  const rawMessage = formData.get('message') as string
   const bienId = formData.get('bienId') as string
   const botField = formData.get('website') as string
 
-  // 1. Honeypot check
+  // --- 2. HONEYPOT ANTI-BOT ---
   if (botField !== '') {
     console.warn("Honeypot filled by bot.")
+    await trackServerEvent('bot_blocked', { reason: 'honeypot', endpoint: 'contact' })
     return { success: true } // Fake success for bot
   }
 
-  // 2. Validation basique
-  if (!nom || !telephone || !bienId) {
+  // --- 3. VALIDATION & SANITIZATION STRICTES ---
+  if (!rawNom || !rawTelephone || !bienId) {
     return { success: false, error: "Veuillez remplir tous les champs obligatoires." }
   }
 
-  // 3. Vérification Turnstile (optional) – token non obligatoire
-  // Si la clé secrète est définie, on attend un token valide.
-  if (TURNSTILE_SECRET_KEY) {
+  const nom = sanitizeText(rawNom.trim())
+  const telephone = sanitizeText(rawTelephone.trim())
+  const message = sanitizeText(rawMessage?.trim() || '')
+
+  if (nom.length > 100) return { success: false, error: "Le nom est trop long." }
+  if (message.length > 2000) return { success: false, error: "Le message est trop long (2000 caractères max)." }
+  if (!isValidPhone(telephone)) return { success: false, error: "Le numéro de téléphone est invalide." }
+
+  // --- 4. VERIFICATION TURNSTILE STRICTE ---
+  const isDev = process.env.NODE_ENV === 'development';
+  const secretKey = isDev ? '1x0000000000000000000000000000000AA' : TURNSTILE_SECRET_KEY;
+
+  if (secretKey) {
     if (!token) {
       return { success: false, error: "Veuillez valider le Captcha." };
     }
-    // Appel à l'API Cloudflare
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
-      body: `secret=${encodeURIComponent(TURNSTILE_SECRET_KEY)}&response=${encodeURIComponent(token as string)}`,
+      body: `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(token as string)}`,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     const data = await res.json();
@@ -42,27 +61,19 @@ export async function submitContact(formData: FormData) {
       console.error('Echec Turnstile:', data);
       return { success: false, error: 'Validation Captcha échouée.' };
     }
-  } else {
-    // Pas de clé -> aucune validation du token
-    if (token) {
-      console.warn('Token Turnstile reçu mais aucune clé secrète configurée – validation ignorée.');
-    }
   }
 
-  // 4. Insertion en base de données avec contournement RLS sécurisé (Service Role)
+  // --- 5. INSERTION BASE DE DONNEES ---
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error("Variables Supabase manquantes dans le serveur.")
     return { success: false, error: "Erreur de configuration serveur." }
   }
 
   const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
+    auth: { autoRefreshToken: false, persistSession: false }
   })
 
-  const { error } = await supabaseAdmin
+  const { data: insertedContact, error } = await supabaseAdmin
     .from('contacts_demandes')
     .insert({
       bien_id: bienId,
@@ -70,11 +81,27 @@ export async function submitContact(formData: FormData) {
       telephone_demandeur: telephone,
       message,
     })
+    .select('id')
+    .single()
 
   if (error) {
     console.error("Erreur insertion contact", error)
     return { success: false, error: "Erreur lors de l'envoi du message." }
   }
+
+  // --- 6. TRACKING ANALYTICS ---
+  // On récupère le proprietaire_id du bien pour l'associer au lead
+  const { data: bien } = await supabaseAdmin
+    .from('biens')
+    .select('proprietaire_id')
+    .eq('id', bienId)
+    .single()
+
+  await trackServerEvent('lead_received', {
+    bien_id: bienId,
+    contact_id: insertedContact.id,
+    has_message: !!message
+  }, bien?.proprietaire_id)
 
   return { success: true }
 }

@@ -22,12 +22,23 @@ export default function Footer() {
           </div>
         </div>
         
-        <div className="md:col-span-3 lg:col-span-2 lg:col-start-7">
+        <div className="md:col-span-3 lg:col-span-2 lg:col-start-6">
           <h3 className="font-display font-bold text-quasi-noir text-lg mb-6 tracking-tight">Navigation</h3>
           <ul className="space-y-4 text-base font-medium text-ardoise-gris">
             <li><Link href="/recherche" className="hover:text-indigo-principal transition-colors">Rechercher un bien</Link></li>
             <li><Link href="/#fonctionnalites" className="hover:text-indigo-principal transition-colors">Fonctionnalités</Link></li>
             <li><Link href="/#comment-ca-marche" className="hover:text-indigo-principal transition-colors">Comment ça marche</Link></li>
+          </ul>
+        </div>
+
+        <div className="md:col-span-2 lg:col-span-2">
+          <h3 className="font-display font-bold text-quasi-noir text-lg mb-6 tracking-tight">Villes cibles</h3>
+          <ul className="space-y-4 text-base font-medium text-ardoise-gris">
+            <li><Link href="/immobilier/keur-massar" className="hover:text-indigo-principal transition-colors">Keur Massar</Link></li>
+            <li><Link href="/immobilier/kounoune" className="hover:text-indigo-principal transition-colors">Kounoune</Link></li>
+            <li><Link href="/immobilier/ndioum" className="hover:text-indigo-principal transition-colors">Ndioum</Link></li>
+            <li><Link href="/immobilier/dakar" className="hover:text-indigo-principal transition-colors">Dakar</Link></li>
+            <li><Link href="/immobilier/saint-louis" className="hover:text-indigo-principal transition-colors">Saint-Louis</Link></li>
           </ul>
         </div>
 

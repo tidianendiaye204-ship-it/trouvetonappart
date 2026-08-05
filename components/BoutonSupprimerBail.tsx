@@ -32,7 +32,7 @@ export default function BoutonSupprimerBail({ id }: { id: string }) {
             onClick={handleSupprimer}
             disabled={enCours}
             className="flex items-center justify-center p-2.5 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-colors disabled:opacity-50"
-            title="Supprimer le bail"
+            title="Supprimer le contrat"
         >
             <Trash2 className="w-5 h-5" />
         </button>

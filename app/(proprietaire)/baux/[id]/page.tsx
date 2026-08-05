@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { ArrowLeft, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
 import FormPaiement from './FormPaiement'
 import BoutonSupprimerBail from '@/components/BoutonSupprimerBail'
+import BoutonLienPaiement from '@/components/BoutonLienPaiement'
+import BoutonWhatsApp from '@/components/BoutonWhatsApp'
 
 export default async function BailDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -127,13 +129,15 @@ export default async function BailDetailsPage({ params }: { params: Promise<{ id
                     </div>
 
                     <div className="flex gap-2">
-                      {paiement.statut === 'paye' && (
+                      {paiement.statut === 'paye' ? (
                         <Link 
                           href={`/baux/${bail.id}/quittance/${paiement.id}`}
                           className="text-xs font-bold bg-indigo-principal/10 text-indigo-principal px-3 py-1.5 rounded-full hover:bg-indigo-principal hover:text-white transition-colors"
                         >
                           Quittance
                         </Link>
+                      ) : (
+                        <BoutonLienPaiement paiementId={paiement.id} />
                       )}
                       
                       {paiement.statut === 'en_retard' && bail.locataires?.email && (
@@ -141,8 +145,19 @@ export default async function BailDetailsPage({ params }: { params: Promise<{ id
                           href={`mailto:${bail.locataires.email}?subject=Relance%20-%20Loyer%20de%20${formatMois(paiement.mois)}&body=Bonjour%20${bail.locataires.prenom},%0D%0A%0D%0ASauf%20erreur%20de%20notre%20part,%20le%20loyer%20de%20${formatMois(paiement.mois)}%20${paiement.annee}%20d'un%20montant%20de%20${paiement.montant}%20CFA%20n'a%20pas%20encore%20%C3%A9t%C3%A9%20r%C3%A9gl%C3%A9.%0D%0AMerci%20de%20r%C3%A9gulariser%20la%20situation%20d%C3%A8s%20que%20possible.%0D%0A%0D%0ACordialement.`}
                           className="text-xs font-bold bg-red-100 text-red-600 px-3 py-1.5 rounded-full hover:bg-red-600 hover:text-white transition-colors"
                         >
-                          Relancer
+                          Email
                         </a>
+                      )}
+                      
+                      {(paiement.statut === 'en_retard' || paiement.statut === 'en_attente') && bail.locataires?.prenom && (
+                        <BoutonWhatsApp 
+                          locataireNom={bail.locataires.prenom}
+                          mois={formatMois(paiement.mois)}
+                          annee={paiement.annee}
+                          montant={paiement.montant}
+                          paiementId={paiement.id}
+                          telephone={bail.locataires.telephone}
+                        />
                       )}
                     </div>
                   </div>

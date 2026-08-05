@@ -26,7 +26,16 @@ export async function middleware(request: NextRequest) {
     // IMPORTANT : ce getUser() est ce qui rafraîchit le cookie de session.
     // Sans cet appel, la session peut sembler "perdue" côté serveur (bug déjà
     // rencontré sur d'autres projets Saaytu/Fii-rek) — ne pas le supprimer.
-    await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    // --- Protection des routes Admin ---
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+        if (!user) {
+            return NextResponse.redirect(new URL('/login', request.url))
+        }
+        // La vérification du rôle 'admin' se fait désormais dans app/admin/layout.tsx
+        // car les requêtes BDD dans le middleware (Edge) peuvent parfois échouer silencieusement.
+    }
 
     return response
 }

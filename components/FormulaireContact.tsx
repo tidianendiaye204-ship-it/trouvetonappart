@@ -9,9 +9,12 @@ export default function FormulaireContact({ bienId }: { bienId: string }) {
   const [enCours, setEnCours] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
   
-  // Rate limiting client state
   const [cooldown, setCooldown] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+
+  // Utilisation des clés de test officielles de Cloudflare en mode développement
+  const isDev = process.env.NODE_ENV === 'development'
+  const siteKey = isDev ? '1x00000000000000000000AA' : process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
   async function clientAction(formData: FormData) {
     // Anti-spam: Client-side rate limit check
@@ -112,9 +115,9 @@ export default function FormulaireContact({ bienId }: { bienId: string }) {
 
       <div className="flex justify-center my-4">
         {/* Turnstile */}
-        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? (
+        {siteKey ? (
           <Turnstile
-            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            siteKey={siteKey}
             onSuccess={(token) => setCaptchaToken(token)}
             options={{ theme: 'light' }}
             onError={(e) => console.error('Turnstile error', e)}
