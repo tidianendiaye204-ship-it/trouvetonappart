@@ -32,6 +32,8 @@ export async function searchBiensPubliques(filtres?: {
   type?: string
   transaction?: string
   ville?: string
+  prix_min?: string
+  prix_max?: string
 }): Promise<Bien[]> {
   const supabase = await createClient()
 
@@ -47,6 +49,13 @@ export async function searchBiensPubliques(filtres?: {
   if (filtres?.ville) {
     query = query.or(`ville.ilike.%${filtres.ville}%,quartier.ilike.%${filtres.ville}%,adresse.ilike.%${filtres.ville}%`)
   }
+  // Filtres de prix
+  if (filtres?.prix_min && !isNaN(Number(filtres.prix_min))) {
+    query = query.gte('prix', Number(filtres.prix_min))
+  }
+  if (filtres?.prix_max && !isNaN(Number(filtres.prix_max))) {
+    query = query.lte('prix', Number(filtres.prix_max))
+  }
 
   const { data: biens, error } = await query
 
@@ -60,6 +69,7 @@ export async function searchBiensPubliques(filtres?: {
     image_principale: b.biens_images?.sort((a: any, c: any) => a.ordre - c.ordre)[0]?.url || null,
   })) as unknown as Bien[]
 }
+
 
 /**
  * Récupère un bien spécifique par son ID
