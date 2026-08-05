@@ -37,7 +37,7 @@ export async function searchBiensPubliques(filtres?: {
 
   let query = supabase
     .from('biens')
-    .select('id, titre, type, transaction, prix, superficie, nb_chambres, quartier, ville, latitude, longitude, sponsorise_jusqu_a, biens_images(url, ordre)')
+    .select('id, titre, type, transaction, prix, superficie, nb_chambres, quartier, ville, adresse, latitude, longitude, sponsorise_jusqu_a, telephone, whatsapp, biens_images(url, ordre)')
     .eq('publie', true)
     .order('sponsorise_jusqu_a', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
