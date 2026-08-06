@@ -11,6 +11,7 @@ export type EventType =
   | 'lease_created'
   | 'bot_blocked'
   | 'alerte_created'
+  | 'quick_contact_generated'
 
 interface AnalyticsProperties {
   [key: string]: any
