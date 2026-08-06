@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { Activity, Users, Home, ShieldAlert, MessageCircle } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
@@ -88,7 +89,7 @@ export default async function AdminDashboard() {
         </div>
 
         {/* Card 5 : Preuve de valeur */}
-        <div className="bg-white rounded-3xl p-6 shadow-lg border border-ardoise-gris/10 md:col-span-2 lg:col-span-4 bg-linear-to-r from-indigo-50 to-purple-50">
+        <Link href="/admin/contacts" className="bg-white rounded-3xl p-6 shadow-lg border border-ardoise-gris/10 md:col-span-2 lg:col-span-4 bg-linear-to-r from-indigo-50 to-purple-50 hover:shadow-xl hover:scale-[1.02] transition-all block cursor-pointer">
           <div className="flex flex-row items-center justify-between pb-2 mb-2">
             <h3 className="text-sm font-bold text-indigo-principal uppercase tracking-wider">
               Contacts & Leads Générés (Preuve de valeur)
@@ -98,8 +99,8 @@ export default async function AdminDashboard() {
             </div>
           </div>
           <div className="text-4xl font-black text-indigo-principal">{countLeads || 0}</div>
-          <p className="text-sm text-ardoise-gris mt-2">Clients ayant contacté un propriétaire via l'application.</p>
-        </div>
+          <p className="text-sm text-ardoise-gris mt-2">Clients ayant contacté un propriétaire via l'application. <span className="font-bold underline text-indigo-principal ml-1">Voir les détails</span></p>
+        </Link>
       </div>
 
       <div className="bg-white rounded-3xl p-8 shadow-lg border-0 mt-8">

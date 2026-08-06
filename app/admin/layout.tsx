@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import Link from 'next/link'
-import { LayoutDashboard, Users, Home, Wallet, ShieldAlert, FileClock } from 'lucide-react'
+import { LayoutDashboard, Users, Home, Wallet, ShieldAlert, FileClock, MessageCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
@@ -32,6 +32,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { label: 'Annonces', icon: Home, href: '/admin/annonces' },
     { label: 'Transactions', icon: Wallet, href: '/admin/transactions' },
     { label: 'Signalements', icon: ShieldAlert, href: '/admin/signalements' },
+    { label: 'Contacts & Leads', icon: MessageCircle, href: '/admin/contacts' },
     { label: 'Logs Actions', icon: FileClock, href: '/admin/logs' },
   ]
 
