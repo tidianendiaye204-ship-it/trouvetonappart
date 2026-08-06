@@ -352,8 +352,9 @@ export default function CarteBiens({ biens, hoveredBienId }: { biens: Bien[], ho
             className="h-full w-full rounded-xl z-0 shadow-inner"
         >
             <TileLayer
-                attribution='&copy; <a href="https://carto.com/">Carto</a>'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://maps.google.com">Google Maps</a>'
+                url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                maxZoom={20}
             />
 
             {/* Auto-zoom sur tous les biens */}
