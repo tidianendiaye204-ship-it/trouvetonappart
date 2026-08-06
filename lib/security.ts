@@ -15,7 +15,7 @@ const supabaseAdmin = createClient(
  */
 export async function checkRateLimit(endpoint: string, maxRequests: number = 5, windowSecs: number = 60): Promise<boolean> {
   try {
-    const headersList = headers()
+    const headersList = await headers()
     const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || '127.0.0.1'
     
     // On extrait la première IP si x-forwarded-for contient une liste
