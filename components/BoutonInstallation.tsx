@@ -26,8 +26,8 @@ export default function BoutonInstallation() {
     const standalone = window.matchMedia('(display-mode: standalone)').matches
     setIsIos(ios)
 
-    // App déjà installée
-    if (standalone || localStorage.getItem('appInstalled') === 'true') {
+    // On masque le bouton UNIQUEMENT si l'app est en train de tourner en mode standalone (installée et ouverte via l'icône)
+    if (standalone) {
       setIsInstalled(true)
       return
     }
@@ -56,7 +56,6 @@ export default function BoutonInstallation() {
       setIsInstalled(true)
       setDeferredPrompt(null)
       window.__pwaInstallPrompt = null
-      localStorage.setItem('appInstalled', 'true')
     }
 
     window.addEventListener('pwa-installable', handleInstallable)
@@ -78,7 +77,6 @@ export default function BoutonInstallation() {
         const { outcome } = await deferredPrompt.userChoice
         if (outcome === 'accepted') {
           setIsInstalled(true)
-          localStorage.setItem('appInstalled', 'true')
         }
       } catch {
         // Si le prompt échoue, afficher les instructions
@@ -122,7 +120,7 @@ export default function BoutonInstallation() {
       {/* ── Modal instructions ── */}
       {showModal && (
         <div
-          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
           onClick={() => setShowModal(false)}
         >
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />

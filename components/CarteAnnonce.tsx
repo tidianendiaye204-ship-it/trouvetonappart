@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { MapPin, Home } from 'lucide-react'
 
 import { Bien } from '@/types'
+import BoutonFavori from './BoutonFavori'
 
 export default function CarteAnnonce({ bien }: { bien: Bien }) {
     const estSponsorise = bien.sponsorise_jusqu_a ? new Date(bien.sponsorise_jusqu_a) > new Date() : false;
@@ -42,6 +43,10 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
                     <span className="bg-quasi-noir/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm capitalize">
                         {bien.type}
                     </span>
+                </div>
+                {/* Bouton favori */}
+                <div className="absolute top-3 right-3 z-20">
+                    <BoutonFavori bienId={bien.id} />
                 </div>
             </div>
 

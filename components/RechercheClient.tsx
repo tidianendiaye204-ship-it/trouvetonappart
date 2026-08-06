@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import CarteAnnonce from './CarteAnnonce'
 import { Bien } from '@/types'
 import { Map, List } from 'lucide-react'
+import BoutonAlerte from './BoutonAlerte'
 
 // Chargement dynamique de la carte pour éviter SSR
 const CarteBiens = dynamic(() => import('./CarteBiens'), { ssr: false })
@@ -59,11 +60,14 @@ export default function RechercheClient({ biens }: Props) {
                 `}
             >
                 <div className="p-4 overflow-y-auto flex-1">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                         <h1 className="font-display text-xl font-black text-quasi-noir">Trouvez votre pépite</h1>
-                        <span className="text-sm font-medium text-ardoise-gris bg-ardoise-gris/10 px-3 py-1 rounded-full shrink-0">
-                            {biens.length} résultat{biens.length > 1 ? 's' : ''}
-                        </span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium text-ardoise-gris bg-ardoise-gris/10 px-3 py-1 rounded-full shrink-0">
+                                {biens.length} résultat{biens.length > 1 ? 's' : ''}
+                            </span>
+                            <BoutonAlerte />
+                        </div>
                     </div>
 
                     {biens.length === 0 ? (

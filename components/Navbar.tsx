@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Building2 } from 'lucide-react'
 import BoutonInstallation from './BoutonInstallation'
+import BoutonNavFavoris from './BoutonNavFavoris'
 
 export default async function Navbar() {
   const supabase = await createClient()
@@ -48,6 +49,8 @@ export default async function Navbar() {
           </Link>
           
           <BoutonInstallation />
+          
+          <BoutonNavFavoris />
 
           {isAdmin && (
             <Link href="/admin" className="bg-red-50 text-red-600 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-sm hover:-translate-y-0.5 transition-all active:scale-95">

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import FormulaireContact from '@/components/FormulaireContact'
 import BoutonSignaler from '@/components/BoutonSignaler'
+import BoutonPartagerNatif from '@/components/BoutonPartagerNatif'
 import { MapPin, BedDouble, Maximize2, Home, ArrowLeft } from 'lucide-react'
 
 function raccourcirAdresse(adresseComplete: string): string {
@@ -253,6 +254,11 @@ export default async function AnnoncePage({
                     )}
                   </div>
                 )}
+                
+                {/* Bouton Partager (Toujours visible) */}
+                <div className="mb-8">
+                  <BoutonPartagerNatif titre={bien.titre} />
+                </div>
 
                 <hr className="border-ardoise-gris/10 mb-8" />
 

@@ -11,6 +11,7 @@ const ibmPlexSans = IBM_Plex_Sans({
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import FooterWrapper from '@/components/FooterWrapper'
+import MobileTabBar from '@/components/MobileTabBar'
 
 export const viewport: Viewport = {
   themeColor: '#4F46E5',
@@ -67,7 +68,7 @@ export default function RootLayout({
           }
         `}} />
       </head>
-      <body className="flex flex-col min-h-screen font-body bg-sable-fond text-quasi-noir">
+      <body className="flex flex-col min-h-screen font-body bg-sable-fond text-quasi-noir pb-16 md:pb-0">
         <Navbar />
         <main className="flex-1">
           {children}
@@ -75,6 +76,7 @@ export default function RootLayout({
         <FooterWrapper>
           <Footer />
         </FooterWrapper>
+        <MobileTabBar />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

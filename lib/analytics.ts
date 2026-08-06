@@ -10,6 +10,7 @@ export type EventType =
   | 'payment_made'
   | 'lease_created'
   | 'bot_blocked'
+  | 'alerte_created'
 
 interface AnalyticsProperties {
   [key: string]: any
