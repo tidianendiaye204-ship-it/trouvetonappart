@@ -94,8 +94,6 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            </section>
-
             {/* PREUVE SOCIALE - Bandeau minimaliste */}
             <div className="border-y border-ardoise-gris/10 bg-white py-8">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
