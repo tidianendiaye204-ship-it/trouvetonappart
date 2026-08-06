@@ -92,7 +92,7 @@ export default function BoutonInstaller() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-center my-12 w-full max-w-md mx-auto px-4">
+        <div className="flex flex-col items-center justify-center w-full max-w-md sm:mx-0">
             <button
                 onClick={handleInstallClick}
                 className="group relative flex items-center justify-center gap-3 w-full py-4 px-8 bg-indigo-principal text-white font-black text-xl rounded-2xl shadow-[0_0_40px_-10px_rgba(27,42,74,0.6)] hover:shadow-[0_0_60px_-15px_rgba(27,42,74,0.8)] transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 overflow-hidden"

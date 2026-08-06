@@ -2,7 +2,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { Building2 } from 'lucide-react'
-import BoutonInstallation from './BoutonInstallation'
 import BoutonNavFavoris from './BoutonNavFavoris'
 
 export default async function Navbar() {
@@ -47,8 +46,6 @@ export default async function Navbar() {
             <span className="hidden sm:inline">Trouver un bien</span>
             <span className="sm:hidden">Recherche</span>
           </Link>
-          
-          <BoutonInstallation />
           
           <BoutonNavFavoris />
 

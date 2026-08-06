@@ -53,6 +53,11 @@ export default function LandingPage() {
                                     </span>
                                 </Link>
                             </div>
+
+                            {/* BOUTON INSTALLER (Visible immédiatement) */}
+                            <div className="mt-8 w-full sm:w-auto self-start animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                                <BoutonInstaller />
+                            </div>
                         </div>
 
                         {/* Colonne de droite - Visuel destructuré */}
@@ -89,11 +94,6 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* BOUTON INSTALLER */}
-            <section className="bg-sable-fond py-8 border-t border-ardoise-gris/10">
-                <div className="max-w-7xl mx-auto px-4 flex justify-center">
-                    <BoutonInstaller />
-                </div>
             </section>
 
             {/* PREUVE SOCIALE - Bandeau minimaliste */}
