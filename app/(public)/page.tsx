@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { MapPin, Search, ArrowRight, ShieldCheck, Home, Banknote, Building2, ChevronRight, FileText, Sparkles, CheckCircle2 } from 'lucide-react'
+import BoutonInstaller from '@/components/BoutonInstaller'
 
 export default function LandingPage() {
     return (
@@ -85,6 +86,13 @@ export default function LandingPage() {
                         </div>
 
                     </div>
+                </div>
+            </section>
+
+            {/* BOUTON INSTALLER */}
+            <section className="bg-sable-fond py-8 border-t border-ardoise-gris/10">
+                <div className="max-w-7xl mx-auto px-4 flex justify-center">
+                    <BoutonInstaller />
                 </div>
             </section>
 
