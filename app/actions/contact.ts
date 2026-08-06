@@ -105,3 +105,34 @@ export async function submitContact(formData: FormData) {
 
   return { success: true }
 }
+
+// Action pour logger un clic rapide (WhatsApp / Appel) sans formulaire
+export async function logQuickContact(bienId: string, type: 'whatsapp' | 'telephone') {
+  // Limite de taux: 5 clics par minute par IP pour éviter le spam
+  const isAllowed = await checkRateLimit('quick_contact_submit', 5, 60)
+  if (!isAllowed) {
+    return { success: false, error: 'Trop de requêtes' }
+  }
+
+  const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
+  
+  const label = type === 'whatsapp' ? 'Clic sur WhatsApp' : 'Clic sur Appeler'
+  
+  const { error } = await supabase
+    .from('contacts_demandes')
+    .insert([{
+      bien_id: bienId,
+      nom_demandeur: 'Lead Anonyme (Clic)',
+      telephone_demandeur: 'Non fourni',
+      message: label,
+      statut: 'nouveau'
+    }])
+
+  if (error) {
+    console.error(`Erreur lors du log du clic ${type}:`, error)
+    return { success: false, error: error.message }
+  }
+
+  await trackServerEvent('quick_contact_generated', { bienId, type })
+  return { success: true }
+}
