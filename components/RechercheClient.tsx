@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import CarteAnnonce from './CarteAnnonce'
 import { Bien } from '@/types'
-import { Map, List } from 'lucide-react'
 import BoutonAlerte from './BoutonAlerte'
 
 // Chargement dynamique de la carte pour éviter SSR
@@ -16,49 +15,15 @@ type Props = {
 
 export default function RechercheClient({ biens }: Props) {
     const [hoveredId, setHoveredId] = useState<string | null>(null)
-    // Vue mobile : 'liste' ou 'carte'
-    const [vueMobile, setVueMobile] = useState<'liste' | 'carte'>('liste')
 
     const handleMouseEnter = useCallback((id: string) => setHoveredId(id), [])
     const handleMouseLeave = useCallback(() => setHoveredId(null), [])
 
     return (
-        <div className="flex flex-col flex-1 min-h-0 lg:flex-row">
-
-            {/* ── Toggle vue mobile (liste / carte) ── */}
-            <div className="lg:hidden flex items-center justify-center gap-2 px-4 py-2 bg-white border-b border-ardoise-gris/10 shrink-0">
-                <button
-                    onClick={() => setVueMobile('liste')}
-                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
-                        vueMobile === 'liste'
-                            ? 'bg-indigo-principal text-white shadow-md'
-                            : 'text-ardoise-gris hover:bg-ardoise-gris/10'
-                    }`}
-                >
-                    <List className="w-4 h-4" />
-                    Liste ({biens.length})
-                </button>
-                <button
-                    onClick={() => setVueMobile('carte')}
-                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
-                        vueMobile === 'carte'
-                            ? 'bg-indigo-principal text-white shadow-md'
-                            : 'text-ardoise-gris hover:bg-ardoise-gris/10'
-                    }`}
-                >
-                    <Map className="w-4 h-4" />
-                    Carte
-                </button>
-            </div>
+        <div className="flex flex-col-reverse lg:flex-row flex-1 lg:min-h-0">
 
             {/* ── Colonne liste ── */}
-            <div
-                className={`
-                    w-full lg:w-1/2 overflow-y-auto lg:border-r border-ardoise-gris/20 flex flex-col
-                    ${vueMobile === 'liste' ? 'flex' : 'hidden'} lg:flex
-                    flex-1 lg:h-full
-                `}
-            >
+            <div className="w-full lg:w-1/2 flex flex-col flex-1 lg:overflow-y-auto lg:border-r border-ardoise-gris/20">
                 <div className="p-4 overflow-y-auto flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                         <h1 className="font-display text-xl font-black text-quasi-noir">Trouvez votre pépite</h1>
@@ -101,12 +66,7 @@ export default function RechercheClient({ biens }: Props) {
             </div>
 
             {/* ── Colonne carte ── */}
-            <div
-                className={`
-                    w-full lg:w-1/2 lg:h-full
-                    ${vueMobile === 'carte' ? 'flex flex-1' : 'hidden'} lg:block
-                `}
-            >
+            <div className="w-full lg:w-1/2 h-[450px] lg:h-full lg:block shrink-0">
                 <CarteBiens biens={biens} hoveredBienId={hoveredId} />
             </div>
         </div>

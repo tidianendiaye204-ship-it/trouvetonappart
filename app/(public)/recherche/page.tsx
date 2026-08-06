@@ -57,7 +57,7 @@ export default async function RecherchePage({
     ].filter((f): f is string => typeof f === 'string')
 
     return (
-        <div className="flex flex-col h-[calc(100vh-5rem)] mt-20 bg-sable-fond">
+        <div className="flex flex-col lg:h-[calc(100vh-5rem)] min-h-screen mt-20 bg-sable-fond">
             {/* ── Barre de filtres (Server Component, form GET natif) ── */}
             <div className="shrink-0 px-4 pt-4 pb-0 border-b border-ardoise-gris/10 bg-sable-fond">
                 <form className="flex flex-col gap-2" method="get">
