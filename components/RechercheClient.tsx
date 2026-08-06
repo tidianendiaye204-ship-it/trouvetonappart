@@ -1,9 +1,13 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import CarteBiens from './CarteBiens'
+import dynamic from 'next/dynamic'
 import CarteAnnonce from './CarteAnnonce'
 import { Bien } from '@/types'
+import { Map, List } from 'lucide-react'
+
+// Chargement dynamique de la carte pour éviter SSR
+const CarteBiens = dynamic(() => import('./CarteBiens'), { ssr: false })
 
 type Props = {
     biens: Bien[]
@@ -11,17 +15,52 @@ type Props = {
 
 export default function RechercheClient({ biens }: Props) {
     const [hoveredId, setHoveredId] = useState<string | null>(null)
+    // Vue mobile : 'liste' ou 'carte'
+    const [vueMobile, setVueMobile] = useState<'liste' | 'carte'>('liste')
 
     const handleMouseEnter = useCallback((id: string) => setHoveredId(id), [])
     const handleMouseLeave = useCallback(() => setHoveredId(null), [])
 
     return (
-        <div className="flex flex-col-reverse lg:flex-row flex-1 min-h-0">
+        <div className="flex flex-col flex-1 min-h-0 lg:flex-row">
+
+            {/* ── Toggle vue mobile (liste / carte) ── */}
+            <div className="lg:hidden flex items-center justify-center gap-2 px-4 py-2 bg-white border-b border-ardoise-gris/10 shrink-0">
+                <button
+                    onClick={() => setVueMobile('liste')}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                        vueMobile === 'liste'
+                            ? 'bg-indigo-principal text-white shadow-md'
+                            : 'text-ardoise-gris hover:bg-ardoise-gris/10'
+                    }`}
+                >
+                    <List className="w-4 h-4" />
+                    Liste ({biens.length})
+                </button>
+                <button
+                    onClick={() => setVueMobile('carte')}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                        vueMobile === 'carte'
+                            ? 'bg-indigo-principal text-white shadow-md'
+                            : 'text-ardoise-gris hover:bg-ardoise-gris/10'
+                    }`}
+                >
+                    <Map className="w-4 h-4" />
+                    Carte
+                </button>
+            </div>
+
             {/* ── Colonne liste ── */}
-            <div className="w-full lg:w-1/2 overflow-y-auto border-t lg:border-t-0 lg:border-r border-ardoise-gris/20 h-[45vh] lg:h-full flex flex-col">
+            <div
+                className={`
+                    w-full lg:w-1/2 overflow-y-auto lg:border-r border-ardoise-gris/20 flex flex-col
+                    ${vueMobile === 'liste' ? 'flex' : 'hidden'} lg:flex
+                    flex-1 lg:h-full
+                `}
+            >
                 <div className="p-4 overflow-y-auto flex-1">
                     <div className="flex items-center justify-between mb-4">
-                        <h1 className="font-display text-2xl font-black text-quasi-noir">Trouvez votre pépite</h1>
+                        <h1 className="font-display text-xl font-black text-quasi-noir">Trouvez votre pépite</h1>
                         <span className="text-sm font-medium text-ardoise-gris bg-ardoise-gris/10 px-3 py-1 rounded-full shrink-0">
                             {biens.length} résultat{biens.length > 1 ? 's' : ''}
                         </span>
@@ -58,7 +97,12 @@ export default function RechercheClient({ biens }: Props) {
             </div>
 
             {/* ── Colonne carte ── */}
-            <div className="w-full lg:w-1/2 h-[40vh] lg:h-full p-0">
+            <div
+                className={`
+                    w-full lg:w-1/2 lg:h-full
+                    ${vueMobile === 'carte' ? 'flex flex-1' : 'hidden'} lg:block
+                `}
+            >
                 <CarteBiens biens={biens} hoveredBienId={hoveredId} />
             </div>
         </div>

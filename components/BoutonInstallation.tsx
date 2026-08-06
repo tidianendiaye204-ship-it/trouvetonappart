@@ -1,31 +1,42 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Download } from 'lucide-react'
+import { Download, X, Share, PlusSquare, MoreHorizontal } from 'lucide-react'
+import Image from 'next/image'
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
 
 export default function BoutonInstallation() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
-  const [isVisible, setIsVisible] = useState<boolean>(false)
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+  const [isInstalled, setIsInstalled] = useState(false)
+  const [showIosModal, setShowIosModal] = useState(false)
+  const [isIos, setIsIos] = useState(false)
 
-  // Initialise visibility based on persisted flag or standalone mode
   useEffect(() => {
-    // If the app is already running as a PWA, never show the button
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsVisible(false)
+    // Enregistrer le Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    }
+
+    // Détecter iOS
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+    setIsIos(ios)
+
+    if (standalone || localStorage.getItem('appInstalled') === 'true') {
+      setIsInstalled(true)
       return
     }
-    // Persisted flag from a previous successful installation
-    if (localStorage.getItem('appInstalled') === 'true') {
-      setIsVisible(false)
-      return
-    }
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
-      setDeferredPrompt(e)
-      setIsVisible(true)
+      setDeferredPrompt(e as BeforeInstallPromptEvent)
     }
     const handleAppInstalled = () => {
-      setIsVisible(false)
+      setIsInstalled(true)
       setDeferredPrompt(null)
       localStorage.setItem('appInstalled', 'true')
     }
@@ -37,34 +48,212 @@ export default function BoutonInstallation() {
     }
   }, [])
 
-  const handleInstallClick = async () => {
+  const handleClick = async () => {
     if (deferredPrompt) {
-      deferredPrompt.prompt()
+      // Android / Chrome Desktop → prompt natif
+      await deferredPrompt.prompt()
       const { outcome } = await deferredPrompt.userChoice
       if (outcome === 'accepted') {
-        setIsVisible(false)
+        setIsInstalled(true)
         localStorage.setItem('appInstalled', 'true')
       }
       setDeferredPrompt(null)
     } else {
-      alert(
-        "Pour installer l'application sur votre téléphone :\n\n- iPhone (Safari) : Appuyez sur l'icône 'Partager' (carré avec une flèche) puis sur 'Sur l'écran d'accueil'.\n- Android (Chrome) : Appuyez sur les 3 points en haut à droite, puis 'Ajouter à l'écran d'accueil'."
-      )
+      // iOS Safari ou navigateur sans prompt → modal avec instructions
+      setShowIosModal(true)
     }
   }
 
-  if (!isVisible) return null
+  // App déjà installée → rien à afficher
+  if (isInstalled) return null
 
   return (
-    <button
-      onClick={handleInstallClick}
-      aria-label="Installer l'application"
-      className="flex items-center gap-1.5 sm:gap-2 bg-quasi-noir text-white px-3 py-2 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95"
-      title="Installer l'application sur votre appareil"
-    >
-      <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-      <span className="hidden sm:inline">Installer l'App</span>
-      <span className="sm:hidden">Installer</span>
-    </button>
+    <>
+      {/* Bouton dans la navbar — toujours visible */}
+      <button
+        id="btn-installer-app"
+        onClick={handleClick}
+        aria-label="Installer l'application"
+        className="flex items-center gap-1.5 bg-indigo-principal text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-lg shadow-indigo-principal/30 hover:shadow-indigo-principal/50 hover:-translate-y-0.5 transition-all active:scale-95 animate-pulse-slow"
+        title="Installer l'app sur votre téléphone"
+      >
+        <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+        <span className="hidden sm:inline">Installer</span>
+        <span className="sm:hidden">App</span>
+      </button>
+
+      {/* ── Modal instructions installation iOS ── */}
+      {showIosModal && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
+          onClick={() => setShowIosModal(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+          {/* Panneau */}
+          <div
+            className="relative w-full max-w-sm mx-4 mb-0 sm:mb-auto bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-indigo-principal px-6 pt-6 pb-8 text-white relative">
+              <button
+                onClick={() => setShowIosModal(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                aria-label="Fermer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-4">
+                <Image
+                  src="/icons/icon-192x192.png"
+                  alt="Trouve Appart"
+                  width={56}
+                  height={56}
+                  className="rounded-2xl shadow-lg"
+                />
+                <div>
+                  <h2 className="text-lg font-black leading-tight">Installer l&apos;app</h2>
+                  <p className="text-sm text-white/80 mt-0.5">Accès rapide depuis l&apos;écran d&apos;accueil</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Contenu */}
+            <div className="px-6 py-5 space-y-4">
+              {isIos ? (
+                /* Instructions iPhone/iPad */
+                <>
+                  <p className="text-sm text-ardoise-gris font-medium text-center">
+                    Suivez ces 3 étapes dans <span className="font-black text-quasi-noir">Safari</span>
+                  </p>
+
+                  {/* Étape 1 */}
+                  <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
+                    <div className="w-9 h-9 bg-indigo-principal rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                      <Share className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-black text-sm text-quasi-noir">Étape 1 — Partager</p>
+                      <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
+                        Appuyez sur l&apos;icône <span className="font-bold text-indigo-principal">Partager</span>{' '}
+                        (carré avec une flèche ↑) en bas de Safari
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Étape 2 */}
+                  <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
+                    <div className="w-9 h-9 bg-indigo-principal rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                      <PlusSquare className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-black text-sm text-quasi-noir">Étape 2 — Ajouter</p>
+                      <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
+                        Dans le menu, faites défiler et appuyez sur{' '}
+                        <span className="font-bold text-indigo-principal">« Sur l&apos;écran d&apos;accueil »</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Étape 3 */}
+                  <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
+                    <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                      <span className="text-white font-black text-base">✓</span>
+                    </div>
+                    <div>
+                      <p className="font-black text-sm text-quasi-noir">Étape 3 — Confirmer</p>
+                      <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
+                        Appuyez sur <span className="font-bold text-indigo-principal">« Ajouter »</span> en haut à droite.
+                        L&apos;icône apparaîtra sur votre écran d&apos;accueil !
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Note Safari */}
+                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                    <span className="text-lg">⚠️</span>
+                    <p className="text-xs text-amber-800 font-medium">
+                      Cette fonctionnalité nécessite <span className="font-black">Safari</span> sur iPhone/iPad. Pas Chrome ni Firefox.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                /* Instructions Android / autres */
+                <>
+                  <p className="text-sm text-ardoise-gris font-medium text-center">
+                    Instructions pour votre navigateur
+                  </p>
+
+                  {/* Étape 1 */}
+                  <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
+                    <div className="w-9 h-9 bg-indigo-principal rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                      <MoreHorizontal className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-black text-sm text-quasi-noir">Étape 1 — Menu</p>
+                      <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
+                        Appuyez sur les <span className="font-bold text-indigo-principal">3 points</span> en haut à droite de Chrome
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Étape 2 */}
+                  <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
+                    <div className="w-9 h-9 bg-indigo-principal rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                      <Download className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-black text-sm text-quasi-noir">Étape 2 — Installer</p>
+                      <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
+                        Appuyez sur{' '}
+                        <span className="font-bold text-indigo-principal">« Installer l&apos;application »</span>{' '}
+                        ou{' '}
+                        <span className="font-bold text-indigo-principal">« Ajouter à l&apos;écran d&apos;accueil »</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Étape 3 */}
+                  <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
+                    <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                      <span className="text-white font-black text-base">✓</span>
+                    </div>
+                    <div>
+                      <p className="font-black text-sm text-quasi-noir">Étape 3 — Confirmer</p>
+                      <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
+                        Appuyez sur <span className="font-bold text-indigo-principal">« Installer »</span> dans la popup.
+                        L&apos;app apparaît sur votre écran d&apos;accueil !
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <button
+                onClick={() => setShowIosModal(false)}
+                className="w-full bg-indigo-principal text-white rounded-2xl py-3.5 font-black text-sm hover:brightness-110 transition-all active:scale-98 shadow-lg shadow-indigo-principal/30 mt-2"
+              >
+                J&apos;ai compris !
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(40px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes pulseSlow {
+          0%, 100% { box-shadow: 0 4px 20px rgba(79,70,229,0.3); }
+          50%       { box-shadow: 0 4px 28px rgba(79,70,229,0.6); }
+        }
+        .animate-pulse-slow { animation: pulseSlow 2.5s ease-in-out infinite; }
+      `}</style>
+    </>
   )
 }
