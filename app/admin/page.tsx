@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Activity, Users, Home, ShieldAlert } from 'lucide-react'
+import { Activity, Users, Home, ShieldAlert, MessageCircle } from 'lucide-react'
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
@@ -21,6 +21,10 @@ export default async function AdminDashboard() {
     .from('signalements')
     .select('*', { count: 'exact', head: true })
     .eq('statut', 'nouveau')
+
+  const { count: countLeads } = await supabase
+    .from('contacts_demandes')
+    .select('*', { count: 'exact', head: true })
 
   return (
     <div className="space-y-8">
@@ -81,6 +85,20 @@ export default async function AdminDashboard() {
             </div>
           </div>
           <div className="text-3xl font-black text-quasi-noir">{countSignalementsNouveaux || 0}</div>
+        </div>
+
+        {/* Card 5 : Preuve de valeur */}
+        <div className="bg-white rounded-3xl p-6 shadow-lg border border-ardoise-gris/10 md:col-span-2 lg:col-span-4 bg-linear-to-r from-indigo-50 to-purple-50">
+          <div className="flex flex-row items-center justify-between pb-2 mb-2">
+            <h3 className="text-sm font-bold text-indigo-principal uppercase tracking-wider">
+              Contacts & Leads Générés (Preuve de valeur)
+            </h3>
+            <div className="w-10 h-10 bg-indigo-principal/20 rounded-full flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-indigo-principal" />
+            </div>
+          </div>
+          <div className="text-4xl font-black text-indigo-principal">{countLeads || 0}</div>
+          <p className="text-sm text-ardoise-gris mt-2">Clients ayant contacté un propriétaire via l'application.</p>
         </div>
       </div>
 

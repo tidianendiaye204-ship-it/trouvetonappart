@@ -252,6 +252,21 @@ export default async function AnnoncePage({
                         WhatsApp
                       </a>
                     )}
+                    
+                    {/* NOUVEAU BOUTON : Demander une vidéo WhatsApp */}
+                    {bien.whatsapp && (
+                      <a
+                        href={`https://wa.me/${bien.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Bonjour, j'ai vu votre annonce "${bien.titre}" sur TrouveTonAppart. Serait-il possible de m'envoyer une petite vidéo du bien ici sur WhatsApp s'il vous plaît ?`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-3 w-full bg-safran-accent/10 hover:bg-safran-accent text-safran-accent-dark hover:text-quasi-noir rounded-2xl py-3.5 text-sm font-bold transition-all duration-300 group mt-3"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Demander une vidéo WhatsApp
+                      </a>
+                    )}
                   </div>
                 )}
                 
