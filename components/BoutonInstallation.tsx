@@ -9,67 +9,94 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
+declare global {
+  interface Window {
+    __pwaInstallPrompt: BeforeInstallPromptEvent | null
+  }
+}
+
 export default function BoutonInstallation() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
-  const [showIosModal, setShowIosModal] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const [isIos, setIsIos] = useState(false)
 
   useEffect(() => {
-    // Enregistrer le Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {})
-    }
-
-    // Détecter iOS
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
     const standalone = window.matchMedia('(display-mode: standalone)').matches
     setIsIos(ios)
 
+    // App déjà installée
     if (standalone || localStorage.getItem('appInstalled') === 'true') {
       setIsInstalled(true)
       return
     }
 
-    const handleBeforeInstallPrompt = (e: Event) => {
+    // ✅ FIX TIMING : lire depuis window.__pwaInstallPrompt capturé dans le script inline du layout
+    // Ce prompt a été capturé AVANT que React hydrate, donc on ne le rate plus jamais
+    if (window.__pwaInstallPrompt) {
+      setDeferredPrompt(window.__pwaInstallPrompt)
+    }
+
+    // Écouter aussi l'événement custom au cas où Chrome émet le prompt APRÈS React
+    const handleInstallable = () => {
+      if (window.__pwaInstallPrompt) {
+        setDeferredPrompt(window.__pwaInstallPrompt)
+      }
+    }
+
+    // Écouter l'événement natif (au cas où il arrive après hydration)
+    const handleNativePrompt = (e: Event) => {
       e.preventDefault()
+      window.__pwaInstallPrompt = e as BeforeInstallPromptEvent
       setDeferredPrompt(e as BeforeInstallPromptEvent)
     }
+
     const handleAppInstalled = () => {
       setIsInstalled(true)
       setDeferredPrompt(null)
+      window.__pwaInstallPrompt = null
       localStorage.setItem('appInstalled', 'true')
     }
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+
+    window.addEventListener('pwa-installable', handleInstallable)
+    window.addEventListener('beforeinstallprompt', handleNativePrompt)
     window.addEventListener('appinstalled', handleAppInstalled)
+
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('pwa-installable', handleInstallable)
+      window.removeEventListener('beforeinstallprompt', handleNativePrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
   }, [])
 
   const handleClick = async () => {
     if (deferredPrompt) {
-      // Android / Chrome Desktop → prompt natif
-      await deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      if (outcome === 'accepted') {
-        setIsInstalled(true)
-        localStorage.setItem('appInstalled', 'true')
+      // ✅ Android / Chrome Desktop → prompt natif d'installation directe
+      try {
+        await deferredPrompt.prompt()
+        const { outcome } = await deferredPrompt.userChoice
+        if (outcome === 'accepted') {
+          setIsInstalled(true)
+          localStorage.setItem('appInstalled', 'true')
+        }
+      } catch {
+        // Si le prompt échoue, afficher les instructions
+        setShowModal(true)
       }
       setDeferredPrompt(null)
+      window.__pwaInstallPrompt = null
     } else {
-      // iOS Safari ou navigateur sans prompt → modal avec instructions
-      setShowIosModal(true)
+      // iOS Safari ou navigateur sans support → modal d'instructions
+      setShowModal(true)
     }
   }
 
-  // App déjà installée → rien à afficher
   if (isInstalled) return null
 
   return (
     <>
-      {/* Bouton dans la navbar — toujours visible */}
+      {/* Bouton navbar — toujours visible */}
       <button
         id="btn-installer-app"
         onClick={handleClick}
@@ -78,20 +105,28 @@ export default function BoutonInstallation() {
         title="Installer l'app sur votre téléphone"
       >
         <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-        <span className="hidden sm:inline">Installer</span>
-        <span className="sm:hidden">App</span>
+        {/* Sur Android/Chrome avec le prompt disponible → label direct */}
+        {deferredPrompt ? (
+          <>
+            <span className="hidden sm:inline">Installer l&apos;app</span>
+            <span className="sm:hidden">Installer</span>
+          </>
+        ) : (
+          <>
+            <span className="hidden sm:inline">Installer</span>
+            <span className="sm:hidden">App</span>
+          </>
+        )}
       </button>
 
-      {/* ── Modal instructions installation iOS ── */}
-      {showIosModal && (
+      {/* ── Modal instructions ── */}
+      {showModal && (
         <div
           className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
-          onClick={() => setShowIosModal(false)}
+          onClick={() => setShowModal(false)}
         >
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-          {/* Panneau */}
           <div
             className="relative w-full max-w-sm mx-4 mb-0 sm:mb-auto bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden z-10 animate-slide-up"
             onClick={(e) => e.stopPropagation()}
@@ -99,7 +134,7 @@ export default function BoutonInstallation() {
             {/* Header */}
             <div className="bg-indigo-principal px-6 pt-6 pb-8 text-white relative">
               <button
-                onClick={() => setShowIosModal(false)}
+                onClick={() => setShowModal(false)}
                 className="absolute top-4 right-4 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
                 aria-label="Fermer"
               >
@@ -120,16 +155,14 @@ export default function BoutonInstallation() {
               </div>
             </div>
 
-            {/* Contenu */}
             <div className="px-6 py-5 space-y-4">
               {isIos ? (
-                /* Instructions iPhone/iPad */
+                /* ── iPhone / iPad ── */
                 <>
                   <p className="text-sm text-ardoise-gris font-medium text-center">
                     Suivez ces 3 étapes dans <span className="font-black text-quasi-noir">Safari</span>
                   </p>
 
-                  {/* Étape 1 */}
                   <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
                     <div className="w-9 h-9 bg-indigo-principal rounded-xl flex items-center justify-center shrink-0 shadow-sm">
                       <Share className="w-5 h-5 text-white" />
@@ -137,13 +170,11 @@ export default function BoutonInstallation() {
                     <div>
                       <p className="font-black text-sm text-quasi-noir">Étape 1 — Partager</p>
                       <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
-                        Appuyez sur l&apos;icône <span className="font-bold text-indigo-principal">Partager</span>{' '}
-                        (carré avec une flèche ↑) en bas de Safari
+                        Appuyez sur l&apos;icône <span className="font-bold text-indigo-principal">Partager</span> (carré avec flèche ↑) en bas de Safari
                       </p>
                     </div>
                   </div>
 
-                  {/* Étape 2 */}
                   <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
                     <div className="w-9 h-9 bg-indigo-principal rounded-xl flex items-center justify-center shrink-0 shadow-sm">
                       <PlusSquare className="w-5 h-5 text-white" />
@@ -151,13 +182,11 @@ export default function BoutonInstallation() {
                     <div>
                       <p className="font-black text-sm text-quasi-noir">Étape 2 — Ajouter</p>
                       <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
-                        Dans le menu, faites défiler et appuyez sur{' '}
-                        <span className="font-bold text-indigo-principal">« Sur l&apos;écran d&apos;accueil »</span>
+                        Faites défiler et appuyez sur <span className="font-bold text-indigo-principal">« Sur l&apos;écran d&apos;accueil »</span>
                       </p>
                     </div>
                   </div>
 
-                  {/* Étape 3 */}
                   <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
                     <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
                       <span className="text-white font-black text-base">✓</span>
@@ -165,41 +194,37 @@ export default function BoutonInstallation() {
                     <div>
                       <p className="font-black text-sm text-quasi-noir">Étape 3 — Confirmer</p>
                       <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
-                        Appuyez sur <span className="font-bold text-indigo-principal">« Ajouter »</span> en haut à droite.
-                        L&apos;icône apparaîtra sur votre écran d&apos;accueil !
+                        Appuyez sur <span className="font-bold text-indigo-principal">« Ajouter »</span> en haut à droite. L&apos;icône apparaît !
                       </p>
                     </div>
                   </div>
 
-                  {/* Note Safari */}
                   <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                     <span className="text-lg">⚠️</span>
                     <p className="text-xs text-amber-800 font-medium">
-                      Cette fonctionnalité nécessite <span className="font-black">Safari</span> sur iPhone/iPad. Pas Chrome ni Firefox.
+                      Nécessite <span className="font-black">Safari</span> — pas Chrome ni Firefox sur iPhone.
                     </p>
                   </div>
                 </>
               ) : (
-                /* Instructions Android / autres */
+                /* ── Android / autres ── */
                 <>
                   <p className="text-sm text-ardoise-gris font-medium text-center">
-                    Instructions pour votre navigateur
+                    Instructions pour <span className="font-black text-quasi-noir">Android Chrome</span>
                   </p>
 
-                  {/* Étape 1 */}
                   <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
                     <div className="w-9 h-9 bg-indigo-principal rounded-xl flex items-center justify-center shrink-0 shadow-sm">
                       <MoreHorizontal className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-black text-sm text-quasi-noir">Étape 1 — Menu</p>
+                      <p className="font-black text-sm text-quasi-noir">Étape 1 — Menu Chrome</p>
                       <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
-                        Appuyez sur les <span className="font-bold text-indigo-principal">3 points</span> en haut à droite de Chrome
+                        Appuyez sur les <span className="font-bold text-indigo-principal">⋮ 3 points</span> en haut à droite de Chrome
                       </p>
                     </div>
                   </div>
 
-                  {/* Étape 2 */}
                   <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
                     <div className="w-9 h-9 bg-indigo-principal rounded-xl flex items-center justify-center shrink-0 shadow-sm">
                       <Download className="w-5 h-5 text-white" />
@@ -207,15 +232,11 @@ export default function BoutonInstallation() {
                     <div>
                       <p className="font-black text-sm text-quasi-noir">Étape 2 — Installer</p>
                       <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
-                        Appuyez sur{' '}
-                        <span className="font-bold text-indigo-principal">« Installer l&apos;application »</span>{' '}
-                        ou{' '}
-                        <span className="font-bold text-indigo-principal">« Ajouter à l&apos;écran d&apos;accueil »</span>
+                        Appuyez sur <span className="font-bold text-indigo-principal">« Ajouter à l&apos;écran d&apos;accueil »</span> ou <span className="font-bold text-indigo-principal">« Installer l&apos;app »</span>
                       </p>
                     </div>
                   </div>
 
-                  {/* Étape 3 */}
                   <div className="flex items-start gap-4 bg-sable-fond rounded-2xl p-4">
                     <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
                       <span className="text-white font-black text-base">✓</span>
@@ -223,8 +244,7 @@ export default function BoutonInstallation() {
                     <div>
                       <p className="font-black text-sm text-quasi-noir">Étape 3 — Confirmer</p>
                       <p className="text-xs text-ardoise-gris mt-0.5 leading-relaxed">
-                        Appuyez sur <span className="font-bold text-indigo-principal">« Installer »</span> dans la popup.
-                        L&apos;app apparaît sur votre écran d&apos;accueil !
+                        Appuyez sur <span className="font-bold text-indigo-principal">« Installer »</span>. L&apos;icône apparaît sur votre écran d&apos;accueil !
                       </p>
                     </div>
                   </div>
@@ -232,8 +252,8 @@ export default function BoutonInstallation() {
               )}
 
               <button
-                onClick={() => setShowIosModal(false)}
-                className="w-full bg-indigo-principal text-white rounded-2xl py-3.5 font-black text-sm hover:brightness-110 transition-all active:scale-98 shadow-lg shadow-indigo-principal/30 mt-2"
+                onClick={() => setShowModal(false)}
+                className="w-full bg-indigo-principal text-white rounded-2xl py-3.5 font-black text-sm hover:brightness-110 transition-all active:scale-[0.98] shadow-lg shadow-indigo-principal/30"
               >
                 J&apos;ai compris !
               </button>

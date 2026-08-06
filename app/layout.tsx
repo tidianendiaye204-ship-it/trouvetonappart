@@ -51,6 +51,21 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Trouve Appart" />
+        {/* Script critique : capture beforeinstallprompt AVANT React + enregistre le SW */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          // Capturer l'événement install avant que React hydrate
+          window.__pwaInstallPrompt = null;
+          window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.__pwaInstallPrompt = e;
+            // Déclencher un événement custom pour notifier React
+            window.dispatchEvent(new Event('pwa-installable'));
+          });
+          // Enregistrer le service worker immédiatement
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(function(){});
+          }
+        `}} />
       </head>
       <body className="flex flex-col min-h-screen font-body bg-sable-fond text-quasi-noir">
         <Navbar />
