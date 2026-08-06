@@ -10,7 +10,7 @@ export default async function AdminSignalementsPage() {
     .select(`
       *,
       biens(titre, ville, proprietaire_id),
-      profiles(nom, email)
+      profiles(nom)
     `)
     .order('created_at', { ascending: false })
 
