@@ -122,14 +122,14 @@ export default function BoutonInstaller() {
                         
                         <ol className="space-y-4 mb-6 text-sm font-medium text-quasi-noir">
                             <li className="flex items-center gap-4 bg-sable-fond p-4 rounded-2xl">
-                                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-indigo-principal text-lg">1</span>
+                                <span className="shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-indigo-principal text-lg">1</span>
                                 <div className="flex-1">
                                     Appuyez sur le bouton <strong className="text-indigo-principal">Partager</strong> dans la barre de votre navigateur.
                                 </div>
                                 <Share className="w-6 h-6 text-indigo-principal shrink-0" />
                             </li>
                             <li className="flex items-center gap-4 bg-sable-fond p-4 rounded-2xl">
-                                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-indigo-principal text-lg">2</span>
+                                <span className="shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm font-bold text-indigo-principal text-lg">2</span>
                                 <div className="flex-1">
                                     Faites défiler et choisissez <strong className="text-indigo-principal">Sur l'écran d'accueil</strong>.
                                 </div>

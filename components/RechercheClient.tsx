@@ -66,7 +66,7 @@ export default function RechercheClient({ biens }: Props) {
             </div>
 
             {/* ── Colonne carte ── */}
-            <div className="w-full lg:w-1/2 h-[450px] lg:h-full lg:block shrink-0">
+            <div className="w-full lg:w-1/2 h-112.5 lg:h-full lg:block shrink-0">
                 <CarteBiens biens={biens} hoveredBienId={hoveredId} />
             </div>
         </div>
