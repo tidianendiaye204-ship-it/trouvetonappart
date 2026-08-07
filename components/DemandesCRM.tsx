@@ -35,6 +35,11 @@ interface Demande {
   dossier_statut?: string
   dossier_score?: number
   dossier_token?: string
+  email_demandeur?: string | null
+  profession?: string | null
+  revenu_mensuel?: number | null
+  type_garant?: string | null
+  type_piece?: string | null
   biens: {
     titre: string
     proprietaire_id: string
@@ -452,9 +457,7 @@ export default function DemandesCRM({ initialDemandes }: { initialDemandes: Dema
               {/* DOSSIER LOCATAIRE */}
               {selectedDemande.dossier_token && (
                 <DossierRevue 
-                  demandeId={selectedDemande.id} 
-                  token={selectedDemande.dossier_token} 
-                  nom={selectedDemande.nom_demandeur}
+                  demande={selectedDemande}
                   onStatutChange={(s) => updateDemande(selectedDemande.id, { dossier_statut: s }, 'note_added', { text: `Statut du dossier mis à jour : ${s}` })}
                 />
               )}

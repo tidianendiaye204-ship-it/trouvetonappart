@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { FileCheck, FileText, CheckCircle2, AlertCircle, Eye, Link2, ExternalLink } from 'lucide-react'
+import { FileCheck, FileText, CheckCircle2, AlertCircle, Eye, Link2, ExternalLink, User, Briefcase, DollarSign, Shield } from 'lucide-react'
+import { DemandeContact } from '@/types'
 
-export default function DossierRevue({ demandeId, token, nom, onStatutChange }: { demandeId: string, token: string, nom: string, onStatutChange: (s: string) => void }) {
+export default function DossierRevue({ demande, onStatutChange }: { demande: any, onStatutChange: (s: string) => void }) {
   const [docs, setDocs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
@@ -14,22 +15,22 @@ export default function DossierRevue({ demandeId, token, nom, onStatutChange }: 
       const { data } = await supabase
         .from('dossiers_documents')
         .select('*')
-        .eq('demande_id', demandeId)
+        .eq('demande_id', demande.id)
       setDocs(data || [])
       setLoading(false)
     }
     loadDocs()
-  }, [demandeId])
+  }, [demande.id])
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/candidature/${token}`
+    const url = `${window.location.origin}/candidature/${demande.dossier_token}`
     navigator.clipboard.writeText(url)
     alert("Lien de dépôt de dossier copié !")
   }
 
   const handleWhatsAppLink = () => {
-    const url = `${window.location.origin}/candidature/${token}`
-    const text = encodeURIComponent(`Bonjour ${nom},\nMerci de constituer votre dossier de location en ligne via ce lien sécurisé :\n\n${url}`)
+    const url = `${window.location.origin}/candidature/${demande.dossier_token}`
+    const text = encodeURIComponent(`Bonjour ${demande.nom_demandeur},\nMerci de constituer votre dossier de location en ligne via ce lien sécurisé :\n\n${url}`)
     window.open(`https://wa.me/?text=${text}`, '_blank')
   }
 
@@ -39,7 +40,7 @@ export default function DossierRevue({ demandeId, token, nom, onStatutChange }: 
   }
 
   const validerDossier = async (finalStatut: string) => {
-    await supabase.from('contacts_demandes').update({ dossier_statut: finalStatut }).eq('id', demandeId)
+    await supabase.from('contacts_demandes').update({ dossier_statut: finalStatut }).eq('id', demande.id)
     onStatutChange(finalStatut)
   }
 
@@ -62,7 +63,34 @@ export default function DossierRevue({ demandeId, token, nom, onStatutChange }: 
         </div>
       </div>
 
-      {loading ? (
+      {/* PROFIL CANDIDAT (Formulaire) */}
+      <div className="bg-sable-fond rounded-xl p-4 border border-ardoise-gris/10 text-sm space-y-3">
+        <div className="flex items-center gap-2 text-quasi-noir">
+          <User className="w-4 h-4 text-ardoise-gris" /> 
+          <span className="font-bold">Email :</span> {demande.email_demandeur || <span className="text-ardoise-gris italic">Non renseigné</span>}
+        </div>
+        <div className="flex items-center gap-2 text-quasi-noir">
+          <Briefcase className="w-4 h-4 text-ardoise-gris" /> 
+          <span className="font-bold">Profession :</span> {demande.profession || <span className="text-ardoise-gris italic">Non renseigné</span>}
+        </div>
+        <div className="flex items-center gap-2 text-quasi-noir">
+          <DollarSign className="w-4 h-4 text-ardoise-gris" /> 
+          <span className="font-bold">Revenu :</span> {demande.revenu_mensuel ? `${demande.revenu_mensuel.toLocaleString('fr-FR')} FCFA` : <span className="text-ardoise-gris italic">Non renseigné</span>}
+        </div>
+        <div className="flex items-center gap-2 text-quasi-noir">
+          <Shield className="w-4 h-4 text-ardoise-gris" /> 
+          <span className="font-bold">Garant :</span> <span className="capitalize">{demande.type_garant || 'Non renseigné'}</span>
+        </div>
+        <div className="flex items-center gap-2 text-quasi-noir">
+          <FileText className="w-4 h-4 text-ardoise-gris" /> 
+          <span className="font-bold">Pièce :</span> <span className="uppercase">{demande.type_piece?.replace('_', ' ') || 'NON RENSEIGNÉ'}</span>
+        </div>
+      </div>
+
+      <div className="border-t border-ardoise-gris/10 pt-4">
+        <h4 className="font-bold text-sm text-quasi-noir mb-3">Pièces justificatives</h4>
+      
+        {loading ? (
         <p className="text-sm text-ardoise-gris">Chargement des pièces...</p>
       ) : docs.length === 0 ? (
         <div className="text-center py-4 bg-sable-fond rounded-xl border border-dashed border-ardoise-gris/20">
@@ -101,7 +129,8 @@ export default function DossierRevue({ demandeId, token, nom, onStatutChange }: 
             </button>
           </div>
         </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

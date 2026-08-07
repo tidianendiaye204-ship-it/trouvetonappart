@@ -89,8 +89,16 @@ export type DemandeContact = {
   bien_id: string
   nom_demandeur: string
   telephone_demandeur: string
+  email_demandeur: string | null
+  profession: string | null
+  revenu_mensuel: number | null
+  type_garant: string | null
+  type_piece: string | null
   message: string | null
   statut: 'nouveau' | 'contacte' | 'visite_planifiee' | 'dossier_recu' | 'negociation' | 'converti' | 'perdu'
+  dossier_statut?: string
+  dossier_score?: number
+  dossier_token?: string
   notes_privees: string | null
   date_dernier_contact: string | null
   created_at?: string

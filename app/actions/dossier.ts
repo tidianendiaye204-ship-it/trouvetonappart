@@ -122,3 +122,42 @@ export async function submitDossier(token: string) {
   revalidatePath(`/candidature/${token}`)
   return { success: true }
 }
+
+export async function updateDossierInfos(token: string, data: {
+  email_demandeur: string
+  profession: string
+  revenu_mensuel: number
+  type_garant: string
+  type_piece: string
+}) {
+  const isAllowed = await checkRateLimit('dossier_update_info', 10, 60)
+  if (!isAllowed) return { success: false, error: "Trop de requêtes." }
+
+  const { data: demande, error: fetchError } = await supabaseAdmin
+    .from('contacts_demandes')
+    .select('id, dossier_statut')
+    .eq('dossier_token', token)
+    .single()
+
+  if (fetchError || !demande) return { success: false, error: 'Lien invalide' }
+
+  const { error: updateError } = await supabaseAdmin
+    .from('contacts_demandes')
+    .update({
+      email_demandeur: data.email_demandeur,
+      profession: data.profession,
+      revenu_mensuel: data.revenu_mensuel,
+      type_garant: data.type_garant,
+      type_piece: data.type_piece,
+      dossier_statut: demande.dossier_statut === 'vide' ? 'incomplet' : demande.dossier_statut
+    })
+    .eq('id', demande.id)
+
+  if (updateError) {
+    console.error('Erreur MAJ dossier infos:', updateError)
+    return { success: false, error: 'Erreur lors de la sauvegarde.' }
+  }
+
+  revalidatePath(`/candidature/${token}`)
+  return { success: true }
+}
