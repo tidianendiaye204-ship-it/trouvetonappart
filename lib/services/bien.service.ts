@@ -18,11 +18,15 @@ export async function getBiensProprietaire(proprietaireId: string): Promise<Bien
   }
 
   // Formatage pour typer correctement et trier les images
-  return (biens || []).map((b) => ({
-    ...b,
-    biens_images: b.biens_images?.sort((a: any, c: any) => a.ordre - c.ordre) || [],
-    image_principale: b.biens_images?.sort((a: any, c: any) => a.ordre - c.ordre)[0]?.url || null,
-  })) as unknown as Bien[]
+  return (biens || []).map((b) => {
+    const images = Array.isArray(b.biens_images) ? [...b.biens_images] : []
+    const sortedImages = images.sort((a: any, c: any) => (a.ordre || 0) - (c.ordre || 0))
+    return {
+      ...b,
+      biens_images: sortedImages,
+      image_principale: sortedImages.length > 0 ? sortedImages[0].url : null,
+    }
+  }) as unknown as Bien[]
 }
 
 /**
@@ -40,7 +44,7 @@ export async function searchBiensPubliques(filtres?: {
 
   let query = supabase
     .from('biens')
-    .select('id, titre, type, transaction, prix, superficie, nb_chambres, quartier, ville, adresse, latitude, longitude, sponsorise_jusqu_a, telephone, whatsapp, biens_images(url, ordre)')
+    .select('id, titre, type, transaction, prix, superficie, nb_chambres, quartier, ville, adresse, latitude, longitude, sponsorise_jusqu_a, telephone, whatsapp, statut, trust_score, photos_verified, availability_confirmed_at, created_at, biens_images(url, ordre), profiles(is_verified, type_compte)')
     .eq('publie', true)
     .order('sponsorise_jusqu_a', { ascending: false, nullsFirst: false })
 
@@ -79,10 +83,13 @@ export async function searchBiensPubliques(filtres?: {
     return []
   }
 
-  return (biens || []).map((b) => ({
-    ...b,
-    image_principale: b.biens_images?.sort((a: any, c: any) => a.ordre - c.ordre)[0]?.url || null,
-  })) as unknown as Bien[]
+  return (biens || []).map((b) => {
+    const images = Array.isArray(b.biens_images) ? [...b.biens_images] : []
+    return {
+      ...b,
+      image_principale: images.length > 0 ? images.sort((a: any, c: any) => (a.ordre || 0) - (c.ordre || 0))[0].url : null,
+    }
+  }) as unknown as Bien[]
 }
 
 
@@ -93,7 +100,7 @@ export async function getBienById(id: string): Promise<Bien | null> {
   const supabase = await createClient()
   const { data: bien, error } = await supabase
     .from('biens')
-    .select('*, biens_images(url, ordre)')
+    .select('*, biens_images(url, ordre), profiles(is_verified, type_compte, nom)')
     .eq('id', id)
     .single()
 
@@ -102,8 +109,9 @@ export async function getBienById(id: string): Promise<Bien | null> {
     return null
   }
 
+  const images = Array.isArray(bien.biens_images) ? [...bien.biens_images] : []
   return {
     ...bien,
-    biens_images: bien.biens_images?.sort((a: any, c: any) => a.ordre - c.ordre) || [],
+    biens_images: images.sort((a: any, c: any) => (a.ordre || 0) - (c.ordre || 0)),
   } as unknown as Bien
 }

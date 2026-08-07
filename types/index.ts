@@ -1,6 +1,6 @@
 export type TypeBien = 'terrain' | 'maison' | 'appartement'
 export type Transaction = 'location' | 'vente'
-export type StatutBien = 'disponible' | 'reserve' | 'loue' | 'vendu'
+export type StatutBien = 'disponible' | 'visite_en_cours' | 'reserve' | 'loue' | 'vendu'
 export type StatutPaiement = 'en_attente' | 'paye' | 'en_retard'
 export type StatutBail = 'actif' | 'termine' | 'resilie'
 
@@ -38,6 +38,10 @@ export type Bien = {
   biens_images?: BienImage[]
   telephone?: string
   whatsapp?: string
+  // Trust System properties
+  photos_verified?: boolean
+  availability_confirmed_at?: string | null
+  trust_score?: number
 }
 
 export type Locataire = {
@@ -175,6 +179,9 @@ export type Profile = {
   date_debut_abonnement: string | null
   statut_compte: StatutCompte
   created_at: string
+  // Trust System
+  is_verified?: boolean
+  type_compte?: 'particulier' | 'agence'
 }
 
 export type Signalement = {

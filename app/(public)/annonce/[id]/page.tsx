@@ -7,7 +7,10 @@ import FormulaireContact from '@/components/FormulaireContact'
 import BoutonSignaler from '@/components/BoutonSignaler'
 import BoutonPartagerNatif from '@/components/BoutonPartagerNatif'
 import ContactButtons from '@/components/ContactButtons'
-import { MapPin, BedDouble, Maximize2, Home, ArrowLeft } from 'lucide-react'
+import { MapPin, BedDouble, Maximize2, Home, ArrowLeft, Shield } from 'lucide-react'
+import BadgeConfiance from '@/components/BadgeConfiance'
+import StatutBienBadge from '@/components/StatutBienBadge'
+import { calculerScoreConfiance } from '@/lib/utils/trustScore'
 
 function raccourcirAdresse(adresseComplete: string): string {
   if (!adresseComplete) return ''
@@ -69,7 +72,7 @@ export default async function AnnoncePage({
 
   const { data: bien } = await supabase
     .from('biens')
-    .select('*, biens_images(url, ordre), profiles(nom)')
+    .select('*, biens_images(url, ordre), profiles(nom, is_verified, type_compte)')
     .eq('id', id)
     .single()
 
@@ -86,6 +89,7 @@ export default async function AnnoncePage({
     (a: { ordre: number }, b: { ordre: number }) => a.ordre - b.ordre
   )
   const isDisponible = bien.statut === 'disponible'
+  const scoreConfiance = calculerScoreConfiance(bien, bien.profiles)
 
   // Schema.org RealEstateListing
   const schemaOrg = {
@@ -179,6 +183,7 @@ export default async function AnnoncePage({
                 <span className="bg-white border border-ardoise-gris/20 text-quasi-noir px-3 py-1 rounded-full text-xs font-bold shadow-sm capitalize">
                   {bien.type}
                 </span>
+                <StatutBienBadge statut={bien.statut} />
               </div>
               <h1 className="font-display text-4xl sm:text-5xl font-black text-quasi-noir mb-4 leading-tight">{bien.titre}</h1>
               <p className="text-ardoise-gris text-lg flex items-center gap-2">
@@ -207,6 +212,51 @@ export default async function AnnoncePage({
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Section Confiance & Fiabilité */}
+            <div>
+              <h2 className="font-display font-bold mb-4 text-quasi-noir text-2xl flex items-center gap-2">
+                <Shield className="w-6 h-6 text-indigo-principal" />
+                Confiance & Fiabilité
+              </h2>
+              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-ardoise-gris/10 shadow-sm">
+                <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
+                  <div className="shrink-0 relative w-24 h-24">
+                    <svg viewBox="0 0 36 36" className="w-24 h-24 stroke-current text-indigo-principal">
+                      <path
+                        className="text-ardoise-gris/10"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none"
+                        strokeWidth="3"
+                      />
+                      <path
+                        className="text-indigo-principal"
+                        strokeDasharray={`${scoreConfiance}, 100`}
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        fill="none"
+                        strokeWidth="3"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-2xl font-black text-quasi-noir">{scoreConfiance}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-quasi-noir mb-1">Score de confiance</h3>
+                    <p className="text-ardoise-gris text-sm">Ce score est calculé sur 100 et évalue la fiabilité de l'annonce en fonction des vérifications effectuées.</p>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  {bien.profiles?.is_verified && (
+                    <BadgeConfiance type={bien.profiles?.type_compte === 'agence' ? 'agence' : 'owner'} />
+                  )}
+                  {bien.photos_verified && <BadgeConfiance type="photos" />}
+                  {bien.availability_confirmed_at && <BadgeConfiance type="availability" />}
+                  {(scoreConfiance >= 80) && <BadgeConfiance type="annonce" />}
+                </div>
+              </div>
             </div>
 
             {bien.description && (

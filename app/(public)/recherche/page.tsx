@@ -54,7 +54,7 @@ export default async function RecherchePage({
         prix_min && `Min : ${Number(prix_min).toLocaleString('fr-FR')} FCFA`,
         prix_max && `Max : ${Number(prix_max).toLocaleString('fr-FR')} FCFA`,
         tri && tri !== 'recent' ? `Tri : ${TRI_LABELS[tri] ?? tri}` : undefined,
-    ].filter((f): f is string => typeof f === 'string')
+    ].filter((f): f is string => typeof f === 'string' && f.trim().length > 0)
 
     return (
         <div className="flex flex-col lg:h-[calc(100vh-5rem)] min-h-screen mt-20 bg-sable-fond">

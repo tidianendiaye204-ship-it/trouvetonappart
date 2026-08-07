@@ -15,6 +15,7 @@ export default function CandidatureLayout({
             width={140} 
             height={32} 
             className="h-8 w-auto object-contain mix-blend-multiply"
+            style={{ width: 'auto', height: 'auto' }}
           />
           <div className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
             Dépôt de Dossier

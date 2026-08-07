@@ -4,6 +4,9 @@ import { MapPin, Home } from 'lucide-react'
 
 import { Bien } from '@/types'
 import BoutonFavori from './BoutonFavori'
+import BadgeConfiance from './BadgeConfiance'
+import StatutBienBadge from './StatutBienBadge'
+import { calculerScoreConfiance } from '@/lib/utils/trustScore'
 
 export default function CarteAnnonce({ bien }: { bien: Bien }) {
     const estSponsorise = bien.sponsorise_jusqu_a ? new Date(bien.sponsorise_jusqu_a) > new Date() : false;
@@ -39,7 +42,8 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
                         {bien.transaction === 'location' ? 'À Louer' : 'À Vendre'}
                     </span>
                 </div>
-                <div className="absolute bottom-3 right-3 flex gap-2 z-10">
+                <div className="absolute bottom-3 right-3 flex gap-2 z-10 flex-col items-end">
+                    <StatutBienBadge statut={bien.statut} />
                     <span className="bg-quasi-noir/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm capitalize">
                         {bien.type}
                     </span>
@@ -54,6 +58,13 @@ export default function CarteAnnonce({ bien }: { bien: Bien }) {
                 <div className="flex items-start justify-between gap-2 mb-2">
                     <p className="font-display font-bold text-quasi-noir text-lg line-clamp-1 flex-1" title={bien.titre}>{bien.titre}</p>
                 </div>
+                
+                {/* Trust System */}
+                {(bien as any).profiles?.is_verified && (
+                    <div className="mb-2">
+                        <BadgeConfiance type={(bien as any).profiles?.type_compte === 'agence' ? 'agence' : 'owner'} />
+                    </div>
+                )}
                 
                 <p className="text-sm text-ardoise-gris mb-4 flex items-center gap-1.5 line-clamp-1">
                     <MapPin className="w-4 h-4 shrink-0 text-indigo-principal/70" />

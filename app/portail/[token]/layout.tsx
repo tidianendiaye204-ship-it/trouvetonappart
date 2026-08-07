@@ -16,6 +16,7 @@ export default function PortailLocataireLayout({
             width={140} 
             height={32} 
             className="h-8 w-auto object-contain mix-blend-multiply"
+            style={{ width: 'auto', height: 'auto' }}
           />
           <div className="bg-indigo-50 text-indigo-principal px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
             Espace Locataire

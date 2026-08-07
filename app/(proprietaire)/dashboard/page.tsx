@@ -121,7 +121,7 @@ export default async function DashboardPage() {
             <ArrowRight className="absolute bottom-6 right-6 w-5 h-5 text-ardoise-gris/30 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
           </Link>
 
-          <Link href="/finances/nouveau" className="bg-white p-6 rounded-3xl border border-ardoise-gris/10 shadow-sm hover:shadow-md hover:border-safran-accent/50 transition-all group relative overflow-hidden sm:col-span-2 lg:col-span-1">
+          <Link href="/finances" className="bg-white p-6 rounded-3xl border border-ardoise-gris/10 shadow-sm hover:shadow-md hover:border-safran-accent/50 transition-all group relative overflow-hidden sm:col-span-2 lg:col-span-1">
             <div className="w-12 h-12 bg-safran-accent/10 text-safran-accent-dark rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Wallet className="w-6 h-6" />
             </div>

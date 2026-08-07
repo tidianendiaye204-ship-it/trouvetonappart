@@ -10,7 +10,7 @@ export async function fetchBiensByIds(ids: string[]): Promise<Bien[]> {
 
   const { data, error } = await supabase
     .from('biens')
-    .select('*')
+    .select('*, biens_images(url, ordre), profiles(is_verified, type_compte)')
     .in('id', ids)
 
   if (error) {
@@ -18,7 +18,15 @@ export async function fetchBiensByIds(ids: string[]): Promise<Bien[]> {
     return []
   }
 
+  const mappedData = data.map(b => {
+    const images = Array.isArray(b.biens_images) ? [...b.biens_images] : []
+    return {
+      ...b,
+      image_principale: images.length > 0 ? images.sort((a: any, c: any) => (a.ordre || 0) - (c.ordre || 0))[0].url : null,
+    }
+  })
+
   // Preserve the order of the ids
-  const favorisMap = new Map(data.map(bien => [bien.id, bien]))
+  const favorisMap = new Map(mappedData.map(bien => [bien.id, bien]))
   return ids.map(id => favorisMap.get(id)).filter(Boolean) as Bien[]
 }

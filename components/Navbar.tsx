@@ -24,6 +24,7 @@ export default async function Navbar() {
             width={180} 
             height={40} 
             className="group-hover:scale-105 transition-transform h-10 w-auto object-contain mix-blend-multiply"
+            style={{ width: 'auto', height: 'auto' }}
           />
         </Link>
 
