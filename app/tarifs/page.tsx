@@ -26,7 +26,7 @@ const TIERS = [
     href: '/login',
     price: '35 000',
     description: 'La solution complète pour les agences immobilières.',
-    features: ['Jusqu\'à 50 biens immobiliers', 'Encaissement des loyers en ligne', 'Automatisation (Email & SMS)', '1 bien sponsorisé par mois', 'Support prioritaire'],
+    features: ['Jusqu\'à 50 biens immobiliers', 'Encaissement des loyers (Bientôt)', 'Automatisation (Email & SMS)', '1 bien sponsorisé par mois', 'Support prioritaire'],
     mostPopular: true,
   },
   {
@@ -47,7 +47,7 @@ const FAQS = [
   },
   {
     question: "Comment fonctionnent les encaissements de loyer (Plan Pro) ?",
-    answer: "Nous sommes intégrés avec les principaux opérateurs locaux (Wave, Orange Money). Vous recevez l'argent directement, et la quittance est générée automatiquement."
+    answer: "Cette fonctionnalité est en cours d'intégration. Bientôt, nous serons connectés avec les principaux opérateurs locaux (Wave, Orange Money) pour vous permettre de recevoir l'argent directement et de générer la quittance automatiquement."
   },
   {
     question: "Y a-t-il des frais cachés sur les transactions ?",

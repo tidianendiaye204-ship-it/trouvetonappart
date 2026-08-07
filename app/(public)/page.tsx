@@ -1,8 +1,12 @@
 import Link from 'next/link'
 import { MapPin, Search, ArrowRight, ShieldCheck, Home, Banknote, Building2, ChevronRight, FileText, Sparkles, CheckCircle2 } from 'lucide-react'
 import BoutonInstaller from '@/components/BoutonInstaller'
+import { PLANS_SPONSORING, formatMontant } from '@/lib/sponsoring/config'
 
 export default function LandingPage() {
+    const planHebdo = PLANS_SPONSORING.find(p => p.jours === 7)
+    const prixHebdo = planHebdo ? formatMontant(planHebdo.montant) : '2 500 FCFA'
+
     return (
         <div className="flex flex-col bg-sable-fond min-h-screen">
             
@@ -211,12 +215,15 @@ export default function LandingPage() {
                         </div>
 
                         {/* Petit Bloc - Paiements en ligne */}
-                        <div className="md:col-span-5 bg-white border border-ardoise-gris/20 rounded-4xl p-10 flex flex-col justify-between shadow-xl shadow-ardoise-gris/5">
+                        <div className="md:col-span-5 bg-white border border-ardoise-gris/20 rounded-4xl p-10 flex flex-col justify-between shadow-xl shadow-ardoise-gris/5 relative overflow-hidden">
+                            <div className="absolute top-6 right-6">
+                                <span className="bg-indigo-50 text-indigo-principal text-xs font-bold px-3 py-1 rounded-full uppercase">Bientôt</span>
+                            </div>
                             <div>
-                                <Banknote className="w-8 h-8 text-emeraude mb-6" />
+                                <Banknote className="w-8 h-8 text-emeraude mb-6 opacity-60" />
                                 <h3 className="text-2xl font-bold text-quasi-noir mb-3">Paiement Sécurisé</h3>
                                 <p className="text-ardoise-gris">
-                                    Permettez à vos locataires de payer leur loyer via lien sécurisé. Plus de retards, plus de déplacements.
+                                    En préparation : Permettez à vos locataires de payer leur loyer via lien sécurisé. Plus de retards, plus de déplacements.
                                 </p>
                             </div>
                         </div>
@@ -273,8 +280,8 @@ export default function LandingPage() {
                             </div>
                             <div className="text-sm font-bold text-white/60 uppercase tracking-wider mb-2">Boost Annonce</div>
                             <div className="flex items-end gap-2 mb-8">
-                                <span className="text-5xl font-black text-white">5 000 FCFA</span>
-                                <span className="text-white/60 pb-1">/ annonce / semaine</span>
+                                <span className="text-5xl font-black text-white">{prixHebdo}</span>
+                                <span className="text-white/60 pb-1">/ annonce / {planHebdo?.jours || 7} jours</span>
                             </div>
                             <ul className="space-y-4 mb-10">
                                 <li className="flex items-start gap-3"><CheckCircle2 className="w-5 h-5 text-safran-accent shrink-0 mt-0.5" /><span className="text-white">Annonce épinglée en haut de page</span></li>
@@ -299,7 +306,7 @@ export default function LandingPage() {
                         </div>
                         <div>
                             <h4 className="text-lg font-bold text-quasi-noir mb-2">Comment les loyers sont-ils payés en ligne ?</h4>
-                            <p className="text-ardoise-gris">Le propriétaire génère un lien de paiement sécurisé depuis son espace. Le locataire peut alors payer par carte bancaire. Les fonds sont transférés au propriétaire et la quittance est générée instantanément.</p>
+                            <p className="text-ardoise-gris">Cette fonctionnalité est actuellement en préparation. Très prochainement, le propriétaire pourra générer un lien de paiement sécurisé via Wave ou Orange Money depuis son espace. Le locataire pourra payer à distance et la quittance sera générée instantanément.</p>
                         </div>
                         <div>
                             <h4 className="text-lg font-bold text-quasi-noir mb-2">Que se passe-t-il si un bien est déjà loué ?</h4>
