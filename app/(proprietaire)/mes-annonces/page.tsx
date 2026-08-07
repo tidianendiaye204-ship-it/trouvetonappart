@@ -41,9 +41,9 @@ export default async function DashboardPage() {
 
   const totalContacts = demandes?.length || 0;
   
-  // Prospects chauds (nouveau ou a_relancer)
+  // Prospects chauds (nouveau ou contacte)
   const prospectsChauds = (demandes || [])
-    .filter(d => d.statut === 'nouveau' || d.statut === 'a_relancer')
+    .filter(d => d.statut === 'nouveau' || d.statut === 'contacte')
     .slice(0, 4) // On en garde max 4 pour l'UI
 
   // Biens les plus populaires

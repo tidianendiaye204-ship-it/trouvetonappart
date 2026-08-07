@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { Building, Users, Wallet, AlertCircle, FileText, ArrowRight, Settings2 } from 'lucide-react'
+import { Building, Users, Wallet, AlertCircle, FileText, ArrowRight, Settings2, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
+import { generateWhatsAppLink } from '@/lib/whatsapp'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -25,11 +26,15 @@ export default async function DashboardPage() {
   // 3. LEADS (Demandes CRM)
   const { data: leads } = await supabase
     .from('contacts_demandes')
-    .select('id, statut, prochaine_relance, biens!inner(proprietaire_id)')
+    .select('id, statut, prochaine_relance, nom_demandeur, telephone_demandeur, biens!inner(titre, proprietaire_id)')
     .eq('biens.proprietaire_id', user.id)
     .not('statut', 'in', '("converti","perdu")')
   
   const activeLeads = leads?.length || 0
+  
+  // Identifier un lead urgent (date de relance dépassée ou égale à aujourd'hui)
+  const now = new Date()
+  const urgentLead = leads?.find(l => l.prochaine_relance && new Date(l.prochaine_relance) <= now)
 
   // 4. LOYERS (Exemple simplifié si la structure paiements existe)
   // On récupère les paiements en retard (impayés + date passée)
@@ -47,7 +52,7 @@ export default async function DashboardPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-8 max-w-6xl mx-auto">
       <div>
-        <h1 className="font-display text-3xl sm:text-4xl font-black text-quasi-noir mb-2">Bonjour ! 👋</h1>
+        <h1 className="font-display text-3xl sm:text-4xl font-black text-quasi-noir mb-2">Bonjour !</h1>
         <p className="text-ardoise-gris text-lg">Voici ce qui requiert votre attention aujourd'hui.</p>
       </div>
 
@@ -78,20 +83,35 @@ export default async function DashboardPage() {
             )}
 
             {activeLeads > 0 && (
-              <Link href="/demandes" className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 rounded-2xl bg-indigo-50 border border-indigo-100 hover:border-indigo-300 transition-colors group">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 rounded-2xl bg-indigo-50 border border-indigo-100 transition-colors group">
                 <div className="flex items-center gap-4 mb-4 sm:mb-0">
                   <div className="bg-white p-3 rounded-xl text-indigo-principal shadow-sm group-hover:scale-110 transition-transform">
                     <Users className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-indigo-900 text-lg">{activeLeads} nouveau(x) contact(s)</h3>
-                    <p className="text-sm text-indigo-700/80 mt-0.5">Des clients attendent votre réponse</p>
+                    <h3 className="font-bold text-indigo-900 text-lg">{activeLeads} contact(s) en cours</h3>
+                    {urgentLead ? (
+                      <p className="text-sm font-bold text-red-500 mt-0.5">Relance urgente : {urgentLead.nom_demandeur}</p>
+                    ) : (
+                      <p className="text-sm text-indigo-700/80 mt-0.5">Des clients attendent votre réponse</p>
+                    )}
                   </div>
                 </div>
-                <div className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-principal text-white rounded-xl font-bold text-sm shadow-sm hover:bg-indigo-600 transition-colors">
-                  Voir les demandes <ArrowRight className="w-4 h-4" />
+                <div className="w-full sm:w-auto flex items-center justify-center gap-2">
+                  {urgentLead && (
+                    <a 
+                      href={generateWhatsAppLink(urgentLead.telephone_demandeur, 'relance_prospect', { nom: urgentLead.nom_demandeur, bien: Array.isArray(urgentLead.biens) ? urgentLead.biens[0].titre : (urgentLead.biens as any).titre })}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex-1 sm:flex-none px-4 py-2.5 bg-green-500 text-white rounded-xl font-bold text-sm shadow-sm hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <MessageCircle className="w-4 h-4" /> WhatsApp
+                    </a>
+                  )}
+                  <Link href="/demandes" className="flex-1 sm:flex-none px-5 py-2.5 bg-indigo-principal text-white rounded-xl font-bold text-sm shadow-sm hover:bg-indigo-600 transition-colors flex items-center justify-center gap-2">
+                    CRM <ArrowRight className="w-4 h-4" />
+                  </Link>
                 </div>
-              </Link>
+              </div>
             )}
 
           </div>

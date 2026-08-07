@@ -3,11 +3,12 @@
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Calendar, Phone, MessageCircle, Clock, ChevronRight, CheckCircle2, AlertCircle, X, History, FileText, Star, Flame, Snowflake, LayoutGrid, List } from 'lucide-react'
+import { Calendar, Phone, MessageCircle, Clock, ChevronRight, CheckCircle2, AlertCircle, X, History, FileText, Star, Flame, Snowflake, LayoutGrid, List, UserPlus, RefreshCw, CalendarCheck, FolderCheck } from 'lucide-react'
 import DossierRevue from '@/components/DossierRevue'
 import { trackClientEvent } from '@/app/actions/analytics'
+import { generateWhatsAppLink, WhatsAppTemplateId } from '@/lib/whatsapp'
 
-type StatutDemande = 'nouveau' | 'contacte' | 'a_relancer' | 'visite_planifiee' | 'negociation' | 'converti' | 'perdu'
+type StatutDemande = 'nouveau' | 'contacte' | 'visite_planifiee' | 'dossier_recu' | 'negociation' | 'converti' | 'perdu'
 
 interface CRMEvent {
   id: string
@@ -44,8 +45,8 @@ interface Demande {
 const STATUTS: { key: StatutDemande, label: string, color: string, border: string }[] = [
   { key: 'nouveau', label: 'Nouveau', color: 'bg-blue-100 text-blue-800', border: 'border-blue-200' },
   { key: 'contacte', label: 'Contacté', color: 'bg-indigo-100 text-indigo-800', border: 'border-indigo-200' },
-  { key: 'a_relancer', label: 'À recontacter', color: 'bg-orange-100 text-orange-800', border: 'border-orange-200' },
   { key: 'visite_planifiee', label: 'Visite', color: 'bg-purple-100 text-purple-800', border: 'border-purple-200' },
+  { key: 'dossier_recu', label: 'Dossier', color: 'bg-pink-100 text-pink-800', border: 'border-pink-200' },
   { key: 'negociation', label: 'Négo', color: 'bg-yellow-100 text-yellow-800', border: 'border-yellow-200' },
   { key: 'converti', label: 'Validé', color: 'bg-green-100 text-green-800', border: 'border-green-200' },
   { key: 'perdu', label: 'Perdu', color: 'bg-gray-100 text-gray-800', border: 'border-gray-200' },
@@ -55,9 +56,71 @@ export default function DemandesCRM({ initialDemandes }: { initialDemandes: Dema
   const [demandes, setDemandes] = useState<Demande[]>(initialDemandes)
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
   const [selectedDemande, setSelectedDemande] = useState<Demande | null>(null)
+  const [showWhatsAppTemplates, setShowWhatsAppTemplates] = useState(false)
+  
+  // Nouveaux états pour les filtres
+  const [filterBien, setFilterBien] = useState<string>('all')
+  const [filterStatut, setFilterStatut] = useState<string>('all')
+  const [filterDate, setFilterDate] = useState<string>('all')
   
   const supabase = createClient()
   const router = useRouter()
+
+  // Liste unique de biens pour le filtre
+  const biensUniques = useMemo(() => {
+    const map = new Map()
+    demandes.forEach(d => {
+      if (!map.has(d.biens.titre)) map.set(d.biens.titre, true)
+    })
+    return Array.from(map.keys())
+  }, [demandes])
+
+  // Filtrage des demandes
+  const filteredDemandes = useMemo(() => {
+    return demandes.filter(d => {
+      if (filterBien !== 'all' && d.biens.titre !== filterBien) return false
+      if (filterStatut !== 'all' && d.statut !== filterStatut) return false
+      
+      if (filterDate !== 'all') {
+        const dateD = new Date(d.created_at)
+        const now = new Date()
+        if (filterDate === '7d') {
+          const limit = new Date(now.setDate(now.getDate() - 7))
+          if (dateD < limit) return false
+        } else if (filterDate === '30d') {
+          const limit = new Date(now.setDate(now.getDate() - 30))
+          if (dateD < limit) return false
+        } else if (filterDate === 'month') {
+          if (dateD.getMonth() !== now.getMonth() || dateD.getFullYear() !== now.getFullYear()) return false
+        }
+      }
+      return true
+    })
+  }, [demandes, filterBien, filterStatut, filterDate])
+
+  // Calcul des KPIs
+  const kpis = useMemo(() => {
+    const totalLeads = filteredDemandes.length
+    const convertis = filteredDemandes.filter(d => d.statut === 'converti').length
+    const tauxConversion = totalLeads > 0 ? Math.round((convertis / totalLeads) * 100) : 0
+    const enCours = filteredDemandes.filter(d => !['nouveau', 'converti', 'perdu'].includes(d.statut)).length
+    
+    let totalHeures = 0
+    let leadsReactifs = 0
+    filteredDemandes.forEach(d => {
+      if (d.crm_events && d.crm_events.length > 0) {
+        const firstAction = [...d.crm_events].sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0]
+        if (firstAction && firstAction.type_event !== 'note_added') {
+          const diff = new Date(firstAction.created_at).getTime() - new Date(d.created_at).getTime()
+          totalHeures += diff / (1000 * 60 * 60)
+          leadsReactifs++
+        }
+      }
+    })
+    const delaiMoyen = leadsReactifs > 0 ? Math.round(totalHeures / leadsReactifs) : null
+
+    return { totalLeads, convertis, tauxConversion, enCours, delaiMoyen }
+  }, [filteredDemandes])
 
   // Calcul des rappels urgents
   const urgences = useMemo(() => {
@@ -124,14 +187,14 @@ export default function DemandesCRM({ initialDemandes }: { initialDemandes: Dema
     }
   }
 
-  const handleWhatsApp = (demande: Demande) => {
-    // Nettoyage du numéro
-    const phone = demande.telephone_demandeur.replace(/\D/g, '')
-    const msg = `Bonjour ${demande.nom_demandeur}, suite à votre intérêt pour le bien "${demande.biens.titre}", je vous contacte pour...`
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+  const handleWhatsApp = (demande: Demande, templateId: WhatsAppTemplateId) => {
+    const url = generateWhatsAppLink(demande.telephone_demandeur, templateId, {
+      nom: demande.nom_demandeur,
+      bien: demande.biens.titre
+    })
     window.open(url, '_blank')
-    
-    updateDemande(demande.id, { date_dernier_contact: new Date().toISOString() }, 'whatsapp_sent', { template: 'Prise de contact' })
+    updateDemande(demande.id, { date_dernier_contact: new Date().toISOString() }, 'whatsapp_sent', { template: templateId })
+    setShowWhatsAppTemplates(false)
   }
 
   // --- RENDERERS ---
@@ -145,21 +208,65 @@ export default function DemandesCRM({ initialDemandes }: { initialDemandes: Dema
   return (
     <div className="space-y-6">
       
-      {/* HEADER & RAPPELS */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-2 bg-sable-fond p-1 rounded-lg border border-ardoise-gris/20">
-          <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-colors ${viewMode === 'kanban' ? 'bg-white shadow-sm text-indigo-principal' : 'text-ardoise-gris hover:text-quasi-noir'}`}>
-            <LayoutGrid className="w-5 h-5" />
-          </button>
-          <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-indigo-principal' : 'text-ardoise-gris hover:text-quasi-noir'}`}>
-            <List className="w-5 h-5" />
-          </button>
+      {/* METRIQUES (KPIs) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-2xl border border-ardoise-gris/10 shadow-sm flex flex-col justify-center">
+          <p className="text-xs font-bold text-ardoise-gris uppercase tracking-wider mb-1">Total Leads</p>
+          <p className="text-2xl font-black text-quasi-noir">{kpis.totalLeads}</p>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-ardoise-gris/10 shadow-sm flex flex-col justify-center">
+          <p className="text-xs font-bold text-ardoise-gris uppercase tracking-wider mb-1">En Cours</p>
+          <p className="text-2xl font-black text-indigo-principal">{kpis.enCours}</p>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-ardoise-gris/10 shadow-sm flex flex-col justify-center">
+          <p className="text-xs font-bold text-ardoise-gris uppercase tracking-wider mb-1">Taux Conversion</p>
+          <p className="text-2xl font-black text-emeraude">{kpis.tauxConversion}%</p>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-ardoise-gris/10 shadow-sm flex flex-col justify-center">
+          <p className="text-xs font-bold text-ardoise-gris uppercase tracking-wider mb-1">Délai Rép. Moyen</p>
+          <p className="text-2xl font-black text-orange-600">
+            {kpis.delaiMoyen !== null ? `${kpis.delaiMoyen} h` : '-'}
+          </p>
+        </div>
+      </div>
+
+      {/* HEADER, FILTRES & RAPPELS */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-3 rounded-2xl border border-ardoise-gris/10 shadow-sm">
+        
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Toggle View */}
+          <div className="flex items-center gap-1 bg-sable-fond p-1 rounded-lg border border-ardoise-gris/20 shrink-0">
+            <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-colors ${viewMode === 'kanban' ? 'bg-white shadow-sm text-indigo-principal' : 'text-ardoise-gris hover:text-quasi-noir'}`}>
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-indigo-principal' : 'text-ardoise-gris hover:text-quasi-noir'}`}>
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Filtres */}
+          <select value={filterBien} onChange={e => setFilterBien(e.target.value)} className="text-sm border border-ardoise-gris/20 rounded-lg py-1.5 px-3 bg-sable-fond text-quasi-noir font-medium">
+            <option value="all">Tous les biens</option>
+            {biensUniques.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+
+          <select value={filterStatut} onChange={e => setFilterStatut(e.target.value)} className="text-sm border border-ardoise-gris/20 rounded-lg py-1.5 px-3 bg-sable-fond text-quasi-noir font-medium">
+            <option value="all">Tous statuts</option>
+            {STATUTS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+
+          <select value={filterDate} onChange={e => setFilterDate(e.target.value)} className="text-sm border border-ardoise-gris/20 rounded-lg py-1.5 px-3 bg-sable-fond text-quasi-noir font-medium">
+            <option value="all">Toutes dates</option>
+            <option value="7d">7 derniers jours</option>
+            <option value="30d">30 derniers jours</option>
+            <option value="month">Ce mois-ci</option>
+          </select>
         </div>
 
         {urgences.length > 0 && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-xl flex items-center gap-3 animate-pulse shadow-sm">
-            <AlertCircle className="w-5 h-5" />
-            <span className="text-sm font-bold">{urgences.length} contact(s) à recontacter urgemment !</span>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-sm shrink-0">
+            <AlertCircle className="w-4 h-4 animate-pulse" />
+            <span className="text-xs font-bold">{urgences.length} urgent(s)</span>
           </div>
         )}
       </div>
@@ -168,7 +275,7 @@ export default function DemandesCRM({ initialDemandes }: { initialDemandes: Dema
       {viewMode === 'kanban' && (
         <div className="flex gap-4 overflow-x-auto pb-4 snap-x">
           {STATUTS.map(col => {
-            const colDemandes = demandes.filter(d => d.statut === col.key)
+            const colDemandes = filteredDemandes.filter(d => d.statut === col.key)
             return (
               <div key={col.key} className="min-w-75 w-75 shrink-0 bg-sable-fond/50 rounded-2xl p-3 border border-ardoise-gris/10 snap-start">
                 <div className="flex items-center justify-between mb-3 px-2">
@@ -225,7 +332,7 @@ export default function DemandesCRM({ initialDemandes }: { initialDemandes: Dema
               </tr>
             </thead>
             <tbody className="divide-y divide-ardoise-gris/10">
-              {demandes.map(d => {
+              {filteredDemandes.map(d => {
                 const s = STATUTS.find(x => x.key === d.statut)!
                 return (
                   <tr key={d.id} className="hover:bg-sable-fond/30 transition-colors cursor-pointer" onClick={() => setSelectedDemande(d)}>
@@ -270,10 +377,27 @@ export default function DemandesCRM({ initialDemandes }: { initialDemandes: Dema
             <div className="p-6 flex-1 space-y-8">
               
               {/* Actions rapides */}
-              <div className="flex flex-wrap gap-3">
-                <button onClick={() => handleWhatsApp(selectedDemande)} className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors">
+              <div className="relative">
+                <button onClick={() => setShowWhatsAppTemplates(!showWhatsAppTemplates)} className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors">
                   <MessageCircle className="w-5 h-5" /> Contacter par WhatsApp
                 </button>
+                
+                {showWhatsAppTemplates && (
+                  <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-xl shadow-lg border border-ardoise-gris/10 p-2 z-10 grid grid-cols-1 gap-1">
+                    <button onClick={() => handleWhatsApp(selectedDemande, 'premier_contact')} className="text-left flex items-center gap-2 px-4 py-2 hover:bg-sable-fond rounded-lg text-sm font-medium text-quasi-noir">
+                      <UserPlus className="w-4 h-4 text-ardoise-gris" /> Premier contact
+                    </button>
+                    <button onClick={() => handleWhatsApp(selectedDemande, 'relance_prospect')} className="text-left flex items-center gap-2 px-4 py-2 hover:bg-sable-fond rounded-lg text-sm font-medium text-quasi-noir">
+                      <RefreshCw className="w-4 h-4 text-ardoise-gris" /> Relance prospect
+                    </button>
+                    <button onClick={() => handleWhatsApp(selectedDemande, 'confirmation_visite')} className="text-left flex items-center gap-2 px-4 py-2 hover:bg-sable-fond rounded-lg text-sm font-medium text-quasi-noir">
+                      <CalendarCheck className="w-4 h-4 text-ardoise-gris" /> Confirmation visite
+                    </button>
+                    <button onClick={() => handleWhatsApp(selectedDemande, 'relance_dossier')} className="text-left flex items-center gap-2 px-4 py-2 hover:bg-sable-fond rounded-lg text-sm font-medium text-quasi-noir">
+                      <FolderCheck className="w-4 h-4 text-ardoise-gris" /> Relance dossier
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Qualification */}

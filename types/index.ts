@@ -90,7 +90,7 @@ export type DemandeContact = {
   nom_demandeur: string
   telephone_demandeur: string
   message: string | null
-  statut: 'nouveau' | 'a_relancer' | 'visite_planifiee' | 'converti' | 'perdu'
+  statut: 'nouveau' | 'contacte' | 'visite_planifiee' | 'dossier_recu' | 'negociation' | 'converti' | 'perdu'
   notes_privees: string | null
   date_dernier_contact: string | null
   created_at?: string

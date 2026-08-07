@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { CheckCircle2, AlertCircle, Clock, TrendingUp, Wallet, ArrowRight } from 'lucide-react'
+import { generateWhatsAppLink } from '@/lib/whatsapp'
 
 export default async function FinancesPage() {
   const supabase = await createClient()
@@ -25,7 +26,7 @@ export default async function FinancesPage() {
       *,
       baux!inner (
         id,
-        locataires (prenom, nom),
+        locataires (prenom, nom, telephone, email),
         biens!inner (id, titre, proprietaire_id)
       )
     `)
@@ -190,19 +191,41 @@ export default async function FinancesPage() {
                         )}
                         {paiement.statut === 'en_retard' && (
                           <a 
-                            href={`mailto:${paiement.baux.locataires.email || ''}?subject=Relance%20-%20Loyer%20de%20${formatMois(paiement.mois)}&body=Bonjour%20${paiement.baux.locataires.prenom},%0D%0A%0D%0ASauf%20erreur%20de%20notre%20part,%20le%20loyer%20de%20${formatMois(paiement.mois)}%20${paiement.annee}%20d'un%20montant%20de%20${paiement.montant}%20CFA%20n'a%20pas%20encore%20%C3%A9t%C3%A9%20r%C3%A9gl%C3%A9.%0D%0AMerci%20de%20r%C3%A9gulariser%20la%20situation%20d%C3%A8s%20que%20possible.%0D%0A%0D%0ACordialement.`}
+                            href={paiement.baux.locataires.telephone ? generateWhatsAppLink(paiement.baux.locataires.telephone, 'relance_retard', {
+                              nom: paiement.baux.locataires.prenom,
+                              bien: paiement.baux.biens.titre,
+                              montant: paiement.montant,
+                              date: `${formatMois(paiement.mois)} ${paiement.annee}`
+                            }) : '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="text-xs font-bold bg-red-100 text-red-600 px-3 py-1.5 rounded-full hover:bg-red-600 hover:text-white transition-colors"
                           >
-                            Relancer
+                            WhatsApp Relance
                           </a>
                         )}
                         {paiement.statut === 'en_attente' && (
-                          <Link 
-                            href={`/baux/${paiement.bail_id}`}
-                            className="text-xs font-bold bg-sable-fond text-quasi-noir px-3 py-1.5 rounded-full hover:bg-ardoise-gris/20 transition-colors"
-                          >
-                            Détails
-                          </Link>
+                          <>
+                            <a 
+                              href={paiement.baux.locataires.telephone ? generateWhatsAppLink(paiement.baux.locataires.telephone, 'rappel_loyer', {
+                                nom: paiement.baux.locataires.prenom,
+                                bien: paiement.baux.biens.titre,
+                                montant: paiement.montant,
+                                date: `${formatMois(paiement.mois)} ${paiement.annee}`
+                              }) : '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-bold bg-safran-accent/10 text-safran-accent px-3 py-1.5 rounded-full hover:bg-safran-accent hover:text-white transition-colors"
+                            >
+                              WhatsApp Rappel
+                            </a>
+                            <Link 
+                              href={`/baux/${paiement.bail_id}`}
+                              className="text-xs font-bold bg-sable-fond text-quasi-noir px-3 py-1.5 rounded-full hover:bg-ardoise-gris/20 transition-colors"
+                            >
+                              Détails
+                            </Link>
+                          </>
                         )}
                       </div>
                     </td>
